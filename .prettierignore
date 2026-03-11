@@ -1,0 +1,12 @@
+node_modules
+dist
+build
+coverage
+.next
+out
+*.min.js
+*.min.css
+*.lock
+.env
+.env.local
+.DS_Store

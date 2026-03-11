@@ -1,0 +1,58 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Production/Build
+dist/
+build/
+out/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# TypeScript
+*.tsbuildinfo
+tsconfig.prod.json
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+Thumbs.db
+
+# Cache
+.eslintcache
+.cache/
+
+# Firebase/Firestore
+.firebase/
+firebase-debug.log
+
+# GCP
+.gcloud/
+service-account-key.json
+
+# Docker
+.docker/
+
+# Temporary
+tmp/
+temp/
