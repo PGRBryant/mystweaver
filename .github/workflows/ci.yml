@@ -9,45 +9,121 @@ on:
 permissions:
   contents: read
 
+# Cancel in-progress runs for the same branch on new push
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+
+  # ── Install ──────────────────────────────────────────────────────────────────
+  # Cache node_modules so subsequent jobs skip re-downloading packages.
+  install:
+    runs-on: ubuntu-latest
+    name: Install dependencies
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Cache node_modules
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+  # ── Format check ─────────────────────────────────────────────────────────────
+  format:
+    runs-on: ubuntu-latest
+    name: Format
+    needs: install
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Restore node_modules
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          fail-on-cache-miss: true
+
+      - run: npm run format:check
+
+  # ── Lint ──────────────────────────────────────────────────────────────────────
   lint:
     runs-on: ubuntu-latest
     name: Lint
-
+    needs: install
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
 
-      - run: npm ci
+      - name: Restore node_modules
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          fail-on-cache-miss: true
 
       - run: npm run lint
 
+  # ── Type check ────────────────────────────────────────────────────────────────
   typecheck:
     runs-on: ubuntu-latest
     name: Type Check
-
+    needs: install
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
 
-      - run: npm ci
+      - name: Restore node_modules
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          fail-on-cache-miss: true
 
       - run: npm run typecheck
 
+  # ── Tests (matrix across Node LTS versions) ───────────────────────────────────
   test:
     runs-on: ubuntu-latest
     name: Tests (Node ${{ matrix.node-version }})
+    needs: install
     strategy:
+      fail-fast: false
       matrix:
-        node-version: ['18', '20']
+        node-version: ['20', '22']
 
     steps:
       - uses: actions/checkout@v4
@@ -57,39 +133,50 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
 
+      # Re-run npm ci for the matrix node version (cache may differ)
       - run: npm ci
 
       - run: npm run test
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         if: matrix.node-version == '20'
         with:
           files: ./coverage/coverage-final.json
           flags: unittests
           fail_ci_if_error: false
 
+  # ── Build ─────────────────────────────────────────────────────────────────────
   build:
     runs-on: ubuntu-latest
     name: Build
-
+    needs: install
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
 
-      - run: npm ci
+      - name: Restore node_modules
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          fail-on-cache-miss: true
 
       - run: npm run build
 
+  # ── Docker build check (PRs only) ─────────────────────────────────────────────
   docker:
     runs-on: ubuntu-latest
     name: Docker Build
     if: github.event_name == 'pull_request'
-
+    needs: build
     steps:
       - uses: actions/checkout@v4
 

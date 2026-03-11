@@ -1,28 +1,32 @@
 version: '3.8'
 
+# Local development environment: Firestore emulator + Redis + API server
+# Usage:
+#   docker-compose up -d            # start background services only
+#   docker-compose --profile api up # also start the API in Docker
+
 services:
-  # Firestore Emulator for local development
+
+  # ── Firestore emulator ─────────────────────────────────────────────────────
   firestore:
-    image: google/cloud-firestore-emulator:latest
+    image: gcr.io/google.com/cloudsdktool/cloud-sdk:emulators
     container_name: labrats-firestore
+    command: >
+      gcloud beta emulators firestore start
+        --host-port=0.0.0.0:8080
+        --project=labrats-local
     ports:
-      - '8080:8080'  # Firestore API
-      - '4000:4000'  # Firestore UI
+      - '8080:8080'
     environment:
-      - FIRESTORE_PROJECT_ID=labrats-local
+      CLOUDSDK_CORE_PROJECT: labrats-local
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:8080']
+      test: ['CMD', 'curl', '-sf', 'http://localhost:8080']
       interval: 10s
       timeout: 5s
       retries: 5
-    command:
-      - /opt/firestore-emulator/bin/firestore-emulator
-      - --host=0.0.0.0
-      - --port=8080
-    volumes:
-      - firestore-data:/data
+      start_period: 15s
 
-  # Redis for caching
+  # ── Redis ───────────────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
     container_name: labrats-redis
@@ -37,8 +41,9 @@ services:
     volumes:
       - redis-data:/data
 
-  # API Server (optional - can run from host for development)
+  # ── API server (optional; prefer running with `npm run dev` on the host) ───
   api:
+    profiles: ['api']
     build:
       context: .
       dockerfile: Dockerfile
@@ -49,25 +54,22 @@ services:
       NODE_ENV: development
       PORT: '3000'
       FIRESTORE_EMULATOR_HOST: firestore:8080
+      GOOGLE_CLOUD_PROJECT: labrats-local
       REDIS_HOST: redis
       REDIS_PORT: '6379'
-      API_KEY_HEADER: 'X-API-Key'
     depends_on:
       firestore:
         condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']
+      test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://localhost:3000/health']
       interval: 10s
       timeout: 3s
       retries: 5
-    volumes:
-      - ./apps/api/src:/app/apps/api/src
-      - ./packages/sdk-js/dist:/app/packages/sdk-js/dist
+      start_period: 10s
 
 volumes:
-  firestore-data:
   redis-data:
 
 networks:

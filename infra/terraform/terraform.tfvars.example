@@ -1,0 +1,7 @@
+# Copy this file to terraform.tfvars and fill in your values.
+# terraform.tfvars is gitignored — never commit it.
+
+project_id  = "your-gcp-project-id"
+region      = "us-central1"
+github_org  = "yourusername"
+github_repo = "labrats"

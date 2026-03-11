@@ -16,8 +16,7 @@ out/
 .env.local
 .env.*.local
 
-# IDE/Editor
-.vscode/
+# IDE/Editor (.vscode is committed for shared launch/task configs)
 .idea/
 *.swp
 *.swo
