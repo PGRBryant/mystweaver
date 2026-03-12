@@ -85,6 +85,7 @@ class Histogram {
     for (const b of this.buckets) {
       if (value <= b) {
         bc.set(b, (bc.get(b) ?? 0) + 1);
+        break; // Only increment the smallest matching bucket; collect() cumulates.
       }
     }
   }

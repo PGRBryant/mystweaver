@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import { validateBody } from '../middleware/validate';
 import * as sdkKeyService from '../services/sdk-key-service';
+import { createSDKKeySchema } from '../schemas';
 import type { CreateSDKKeyRequest } from '../types/sdk-key';
 
 const router = Router();
 
 // POST /api/sdk-keys — create a new SDK key
-router.post('/', validateBody({ name: 'string', projectId: 'string' }), async (req, res, next) => {
+router.post('/', validateBody(createSDKKeySchema), async (req, res, next) => {
   try {
     const result = await sdkKeyService.createSDKKey(req.body as CreateSDKKeyRequest);
     res.status(201).json(result);

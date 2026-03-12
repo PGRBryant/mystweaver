@@ -3,6 +3,11 @@ import * as experimentService from '../services/experiment-service';
 import { computeResults } from '../services/experiment-results';
 import { validateBody } from '../middleware/validate';
 import { AppError } from '../middleware/error-handler';
+import {
+  createExperimentSchema,
+  updateExperimentSchema,
+  concludeExperimentSchema,
+} from '../schemas';
 import type { CreateExperimentRequest, UpdateExperimentRequest } from '../types/experiment';
 
 const router = Router();
@@ -22,7 +27,7 @@ function getUser(req: { user?: { email: string } }): string {
 // POST /api/experiments
 router.post(
   '/',
-  validateBody({ name: 'string', flagKey: 'string', metric: 'string' }),
+  validateBody(createExperimentSchema),
   async (req, res, next) => {
     try {
       const experiment = await experimentService.createExperiment(
@@ -72,7 +77,7 @@ router.get('/:id/results', async (req, res, next) => {
 });
 
 // PATCH /api/experiments/:id
-router.patch('/:id', async (req, res, next) => {
+router.patch('/:id', validateBody(updateExperimentSchema), async (req, res, next) => {
   try {
     const experiment = await experimentService.updateExperiment(
       getProjectId(req),
@@ -115,12 +120,9 @@ router.post('/:id/stop', async (req, res, next) => {
 });
 
 // POST /api/experiments/:id/conclude
-router.post('/:id/conclude', async (req, res, next) => {
+router.post('/:id/conclude', validateBody(concludeExperimentSchema), async (req, res, next) => {
   try {
     const { winner } = req.body as { winner: string };
-    if (!winner || typeof winner !== 'string') {
-      throw new AppError('winner (variant key) is required', 400);
-    }
     const experiment = await experimentService.concludeExperiment(
       getProjectId(req),
       req.params.id,

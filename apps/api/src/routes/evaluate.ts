@@ -3,8 +3,8 @@ import { sdkAuth } from '../middleware/api-key-auth';
 import { validateBody } from '../middleware/validate';
 import { getCachedFlag } from '../services/cache-service';
 import { evaluateFlag } from '../services/evaluation-engine';
-import { AppError } from '../middleware/error-handler';
 import { metrics } from '../metrics';
+import { evaluateSchema, bulkEvaluateSchema } from '../schemas';
 import type { EvaluateRequest, BulkEvaluateRequest } from '../types/api';
 
 const router = Router();
@@ -15,7 +15,7 @@ router.use(sdkAuth);
 // POST /sdk/evaluate — evaluate a single flag
 router.post(
   '/',
-  validateBody({ flagKey: 'string', userContext: 'object' }),
+  validateBody(evaluateSchema),
   async (req, res, next) => {
     try {
       const start = Date.now();
@@ -37,16 +37,11 @@ router.post(
 // POST /sdk/evaluate/bulk — evaluate multiple flags
 router.post(
   '/bulk',
-  validateBody({ flags: 'array', userContext: 'object' }),
+  validateBody(bulkEvaluateSchema),
   async (req, res, next) => {
     try {
       const { flags: flagKeys, userContext } = req.body as BulkEvaluateRequest;
       const projectId = req.sdkProjectId!;
-
-      if (flagKeys.length > 50) {
-        throw new AppError('Maximum 50 flags per bulk request', 400);
-      }
-
       const start = Date.now();
 
       // Deduplicate keys, fetch in parallel.

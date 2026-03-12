@@ -4,13 +4,14 @@ import { validateBody } from '../middleware/validate';
 import { eventsCollection } from '../db/firestore';
 import { logger } from '../logger';
 import { metrics } from '../metrics';
+import { eventIngestionSchema } from '../schemas';
 import type { EventIngestionRequest, SDKEvent } from '../types/api';
 
 const router = Router();
 const MAX_EVENTS = 100;
 
 // POST /sdk/events — ingest evaluation and metric events
-router.post('/', sdkAuth, validateBody({ events: 'array' }), (req, res) => {
+router.post('/', sdkAuth, validateBody(eventIngestionSchema), (req, res) => {
   const projectId = req.sdkProjectId!;
   const { events } = req.body as EventIngestionRequest;
 

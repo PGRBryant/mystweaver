@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as flagService from '../services/flag-service';
 import { validateBody } from '../middleware/validate';
 import { AppError } from '../middleware/error-handler';
+import { createFlagSchema, updateFlagSchema } from '../schemas';
 import type { CreateFlagRequest, UpdateFlagRequest } from '../types/api';
 
 const router = Router();
@@ -22,7 +23,7 @@ function getUser(req: { user?: { email: string } }): string {
 // POST /api/flags
 router.post(
   '/',
-  validateBody({ key: 'string', name: 'string', type: 'string' }),
+  validateBody(createFlagSchema),
   async (req, res, next) => {
     try {
       const flag = await flagService.createFlag(
@@ -62,7 +63,7 @@ router.get('/:key', async (req, res, next) => {
 });
 
 // PUT /api/flags/:key — full replace
-router.put('/:key', async (req, res, next) => {
+router.put('/:key', validateBody(createFlagSchema), async (req, res, next) => {
   try {
     const flag = await flagService.replaceFlag(
       getProjectId(req),
@@ -77,7 +78,7 @@ router.put('/:key', async (req, res, next) => {
 });
 
 // PATCH /api/flags/:key — partial update
-router.patch('/:key', async (req, res, next) => {
+router.patch('/:key', validateBody(updateFlagSchema), async (req, res, next) => {
   try {
     const flag = await flagService.updateFlag(
       getProjectId(req),
