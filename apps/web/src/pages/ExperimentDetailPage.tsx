@@ -66,14 +66,18 @@ export function ExperimentDetailPage() {
     }
   }, [id]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   // Poll for results every 10s when running.
   useEffect(() => {
     if (experiment?.status !== 'running') return;
     const interval = setInterval(() => {
       if (!id) return;
-      fetchExperimentResults(id).then(setResults).catch(() => {});
+      fetchExperimentResults(id)
+        .then(setResults)
+        .catch(() => {});
     }, 10000);
     return () => clearInterval(interval);
   }, [experiment?.status, id]);
@@ -102,7 +106,12 @@ export function ExperimentDetailPage() {
 
   const handleConclude = async (winnerKey: string) => {
     if (!id) return;
-    if (!confirm(`Declare "${winnerKey}" the winner? This will update the flag's default value and stop the experiment.`)) return;
+    if (
+      !confirm(
+        `Declare "${winnerKey}" the winner? This will update the flag's default value and stop the experiment.`,
+      )
+    )
+      return;
     setActionError(null);
     try {
       await concludeExperiment(id, winnerKey);
@@ -121,7 +130,10 @@ export function ExperimentDetailPage() {
 
   return (
     <div>
-      <button onClick={() => navigate('/experiments')} className="text-sm text-indigo-600 hover:text-indigo-500 mb-4 inline-block">
+      <button
+        onClick={() => navigate('/experiments')}
+        className="text-sm text-indigo-600 hover:text-indigo-500 mb-4 inline-block"
+      >
         &larr; All experiments
       </button>
 
@@ -129,11 +141,13 @@ export function ExperimentDetailPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{experiment.name}</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Flag: <span className="font-mono">{experiment.flagKey}</span> &middot;
-            Metric: <span className="font-medium">{experiment.metric}</span>
+            Flag: <span className="font-mono">{experiment.flagKey}</span> &middot; Metric:{' '}
+            <span className="font-medium">{experiment.metric}</span>
           </p>
         </div>
-        <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${STATUS_COLORS[experiment.status]}`}>
+        <span
+          className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${STATUS_COLORS[experiment.status]}`}
+        >
           {experiment.status}
         </span>
       </div>
@@ -145,12 +159,18 @@ export function ExperimentDetailPage() {
       {/* Action buttons */}
       <div className="flex gap-2 mb-6">
         {experiment.status === 'draft' && (
-          <button onClick={handleStart} className="rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500">
+          <button
+            onClick={handleStart}
+            className="rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500"
+          >
             Start experiment
           </button>
         )}
         {experiment.status === 'running' && (
-          <button onClick={handleStop} className="rounded-md bg-yellow-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-yellow-500">
+          <button
+            onClick={handleStop}
+            className="rounded-md bg-yellow-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-yellow-500"
+          >
             Stop experiment
           </button>
         )}
@@ -158,7 +178,9 @@ export function ExperimentDetailPage() {
 
       {/* Variants */}
       <div className="mb-6">
-        <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Variants</h2>
+        <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+          Variants
+        </h2>
         <div className="grid grid-cols-2 gap-4">
           {experiment.variants.map((v) => (
             <div key={v.key} className="rounded-lg border border-gray-200 bg-white p-4">
@@ -190,7 +212,10 @@ export function ExperimentDetailPage() {
                     <span className="text-gray-500">{vr.sampleSize} users</span>
                   </div>
                   <div className="h-4 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-indigo-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                    <div
+                      className="h-full bg-indigo-500 rounded-full transition-all"
+                      style={{ width: `${pct}%` }}
+                    />
                   </div>
                 </div>
               );
@@ -219,9 +244,13 @@ export function ExperimentDetailPage() {
                     <tr key={key} className={isWinner ? 'bg-green-50' : ''}>
                       <td className="py-2 font-medium text-gray-900">
                         {key}
-                        {isWinner && <span className="ml-2 text-xs text-green-600 font-semibold">WINNER</span>}
+                        {isWinner && (
+                          <span className="ml-2 text-xs text-green-600 font-semibold">WINNER</span>
+                        )}
                       </td>
-                      <td className="py-2 text-gray-700">{(vr.conversionRate * 100).toFixed(1)}%</td>
+                      <td className="py-2 text-gray-700">
+                        {(vr.conversionRate * 100).toFixed(1)}%
+                      </td>
                       <td className="py-2 text-gray-700">{vr.mean.toFixed(2)}</td>
                       <td className="py-2 text-gray-700">{vr.stdDev.toFixed(2)}</td>
                       <td className="py-2 text-gray-500">{vr.sampleSize}</td>
@@ -243,10 +272,16 @@ export function ExperimentDetailPage() {
           </div>
 
           {/* Statistical significance */}
-          <div className={`rounded-lg border p-4 ${results.significanceReached ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-white'}`}>
+          <div
+            className={`rounded-lg border p-4 ${results.significanceReached ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-white'}`}
+          >
             <div className="flex items-center gap-2 mb-2">
-              <h3 className="text-xs font-medium text-gray-500 uppercase">Statistical significance</h3>
-              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${results.significanceReached ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+              <h3 className="text-xs font-medium text-gray-500 uppercase">
+                Statistical significance
+              </h3>
+              <span
+                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${results.significanceReached ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}
+              >
                 p = {formatPValue(results.pValue)}
               </span>
             </div>
@@ -254,7 +289,8 @@ export function ExperimentDetailPage() {
               {pValueExplanation(results.pValue, results.significanceReached)}
             </p>
             <p className="text-xs text-gray-400 mt-2">
-              Confidence level: {(results.confidenceLevel * 100).toFixed(0)}% (two-tailed Welch's t-test)
+              Confidence level: {(results.confidenceLevel * 100).toFixed(0)}% (two-tailed Welch's
+              t-test)
             </p>
           </div>
         </div>

@@ -57,12 +57,7 @@ export function FlagEditPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
-          <FlagForm
-            mode="edit"
-            initial={flag}
-            onSubmit={handleSubmit}
-            submitting={submitting}
-          />
+          <FlagForm mode="edit" initial={flag} onSubmit={handleSubmit} submitting={submitting} />
         </div>
         <div className="space-y-8">
           <EvalTester flagKey={flag.key} />

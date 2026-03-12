@@ -17,17 +17,20 @@ Please be respectful and constructive in all interactions. We are committed to p
 ### Development Setup
 
 1. **Fork and Clone**
+
    ```bash
    git clone https://github.com/YOUR_USERNAME/mystweaver.git
    cd mystweaver
    ```
 
 2. **Install Dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Start Local Development Environment**
+
    ```bash
    docker-compose up -d
    ```
@@ -75,6 +78,7 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 **Scope:** The package or feature area (e.g., `api`, `web`, `sdk-js`)
 
 **Examples:**
+
 ```
 feat(api): add flag targeting by user segments
 fix(sdk-js): handle missing api key gracefully
@@ -104,6 +108,7 @@ chore(deps): upgrade typescript to 5.3.3
 ### CI/CD Pipeline
 
 Every PR runs automated checks:
+
 - **Linting** – Code style enforcement
 - **Type Checking** – TypeScript validation
 - **Tests** – Unit and integration tests
@@ -168,10 +173,7 @@ npm run test -- --coverage
  *   userId: 'user-123',
  * });
  */
-export async function isEnabled(
-  flagKey: string,
-  context: EvaluationContext,
-): Promise<boolean> {
+export async function isEnabled(flagKey: string, context: EvaluationContext): Promise<boolean> {
   // ...
 }
 ```
@@ -181,6 +183,7 @@ export async function isEnabled(
 ### Bug Reports
 
 Include:
+
 - **Title**: Clear, concise description
 - **Version**: Which version you're using
 - **Environment**: OS, Node.js version, etc.
@@ -191,6 +194,7 @@ Include:
 ### Feature Requests
 
 Include:
+
 - **Title**: What you want to build
 - **Use Case**: Why this feature is needed
 - **Proposed Solution**: How you'd like it to work
@@ -198,15 +202,15 @@ Include:
 
 ## Project Structure Quick Reference
 
-| Directory | Purpose |
-|-----------|---------|
-| `apps/api` | Express backend server |
-| `apps/web` | React admin UI |
-| `packages/sdk-js` | JavaScript/TypeScript SDK |
-| `packages/sdk-python` | Python SDK |
-| `infra/terraform` | GCP infrastructure |
-| `config/` | Shared TypeScript configuration |
-| `.github/workflows` | CI/CD pipelines |
+| Directory             | Purpose                         |
+| --------------------- | ------------------------------- |
+| `apps/api`            | Express backend server          |
+| `apps/web`            | React admin UI                  |
+| `packages/sdk-js`     | JavaScript/TypeScript SDK       |
+| `packages/sdk-python` | Python SDK                      |
+| `infra/terraform`     | GCP infrastructure              |
+| `config/`             | Shared TypeScript configuration |
+| `.github/workflows`   | CI/CD pipelines                 |
 
 ## Code Standards
 
@@ -266,8 +270,8 @@ try {
 ## Getting Help
 
 - **GitHub Issues**: Ask a question as an issue discussion
-- **Slack/Discord** *(coming soon)*: Real-time community chat
-- **Documentation**: Check the [docs](https://mystweaver.dev) *(coming soon)*
+- **Slack/Discord** _(coming soon)_: Real-time community chat
+- **Documentation**: Check the [docs](https://mystweaver.dev) _(coming soon)_
 
 ## Maintainers
 

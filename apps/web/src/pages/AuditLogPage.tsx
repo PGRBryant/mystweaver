@@ -107,7 +107,9 @@ export function AuditLogPage() {
         >
           <option value="">All actions</option>
           {ACTIONS.map((a) => (
-            <option key={a} value={a}>{ACTION_LABELS[a] ?? a}</option>
+            <option key={a} value={a}>
+              {ACTION_LABELS[a] ?? a}
+            </option>
           ))}
         </select>
         <input
@@ -119,11 +121,7 @@ export function AuditLogPage() {
         />
       </div>
 
-      {error && (
-        <div className="rounded-md bg-red-50 p-4 text-sm text-red-700 mb-4">
-          {error}
-        </div>
-      )}
+      {error && <div className="rounded-md bg-red-50 p-4 text-sm text-red-700 mb-4">{error}</div>}
 
       {loading ? (
         <p className="text-sm text-gray-500">Loading audit records...</p>
@@ -162,12 +160,8 @@ export function AuditLogPage() {
                       {ACTION_LABELS[r.action] ?? r.action}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm font-mono text-gray-600">
-                    {r.flagKey ?? '-'}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">
-                    {r.performedBy}
-                  </td>
+                  <td className="px-4 py-3 text-sm font-mono text-gray-600">{r.flagKey ?? '-'}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{r.performedBy}</td>
                   <td className="px-4 py-3 text-sm">
                     <DiffView label="Before" data={r.before} />
                     <DiffView label="After" data={r.after} />

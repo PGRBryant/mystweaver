@@ -85,10 +85,7 @@ export class MystweaverClient {
    * Bulk-evaluate multiple flags in a single request.
    * Returns a record of flag key → value.  Unknown flags have `null` values.
    */
-  async evaluateAll(
-    flagKeys: string[],
-    context: UserContext,
-  ): Promise<Record<string, unknown>> {
+  async evaluateAll(flagKeys: string[], context: UserContext): Promise<Record<string, unknown>> {
     if (!this.breaker.isAllowed) {
       return this.bulkDefaults(flagKeys);
     }
@@ -117,11 +114,7 @@ export class MystweaverClient {
    * Track a metric event (e.g. "room.completed").
    * Events are batched and flushed periodically.
    */
-  track(
-    event: string,
-    userId: string,
-    properties?: Record<string, unknown>,
-  ): void {
+  track(event: string, userId: string, properties?: Record<string, unknown>): void {
     this.events.push({
       type: 'metric.tracked',
       event,

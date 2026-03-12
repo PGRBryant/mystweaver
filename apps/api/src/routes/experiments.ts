@@ -50,10 +50,7 @@ router.get('/', async (req, res, next) => {
 // GET /api/experiments/:id
 router.get('/:id', async (req, res, next) => {
   try {
-    const experiment = await experimentService.getExperiment(
-      getProjectId(req),
-      req.params.id,
-    );
+    const experiment = await experimentService.getExperiment(getProjectId(req), req.params.id);
     if (!experiment) {
       res.status(404).json({ error: `Experiment "${req.params.id}" not found` });
       return;
@@ -139,10 +136,7 @@ router.post('/:id/conclude', async (req, res, next) => {
 // DELETE /api/experiments/:id
 router.delete('/:id', async (req, res, next) => {
   try {
-    await experimentService.deleteExperiment(
-      getProjectId(req),
-      req.params.id,
-    );
+    await experimentService.deleteExperiment(getProjectId(req), req.params.id);
     res.status(204).end();
   } catch (err) {
     next(err);

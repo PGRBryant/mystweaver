@@ -17,10 +17,10 @@ Phase 4 → GitHub secrets    (connects CI/CD to GCP)
 
 Install the following on your local machine:
 
-| Tool | Version | Install |
-|------|---------|---------|
-| `gcloud` CLI | latest | [cloud.google.com/sdk](https://cloud.google.com/sdk/docs/install) |
-| `terraform` | >= 1.6 | [developer.hashicorp.com/terraform](https://developer.hashicorp.com/terraform/install) |
+| Tool         | Version | Install                                                                                |
+| ------------ | ------- | -------------------------------------------------------------------------------------- |
+| `gcloud` CLI | latest  | [cloud.google.com/sdk](https://cloud.google.com/sdk/docs/install)                      |
+| `terraform`  | >= 1.6  | [developer.hashicorp.com/terraform](https://developer.hashicorp.com/terraform/install) |
 
 Verify:
 
@@ -67,6 +67,7 @@ bash infra/bootstrap.sh
 ```
 
 The script will:
+
 1. Prompt for `gcloud auth login`
 2. Enable `cloudresourcemanager.googleapis.com` and `storage.googleapis.com`
 3. Create a versioned GCS bucket named `${PROJECT_ID}-tfstate`
@@ -94,18 +95,18 @@ backend "gcs" {
 
 Terraform provisions everything else:
 
-| Resource | What it creates |
-|---|---|
-| APIs | Enables all required GCP APIs |
-| Artifact Registry | Docker registry for container images |
-| Firestore | Native-mode database |
-| Cloud Memorystore | Redis 7 cache instance |
-| VPC Access Connector | Private network bridge (Cloud Run → Redis) |
-| Cloud Run | API service (placeholder image, CI/CD owns image updates) |
-| Pub/Sub | `flag-updates` topic for flag change fanout |
-| Service Accounts | Runtime SA for Cloud Run, deployer SA for GitHub Actions |
-| Workload Identity Federation | Keyless auth for GitHub Actions |
-| IAM bindings | Least-privilege roles for each service account |
+| Resource                     | What it creates                                           |
+| ---------------------------- | --------------------------------------------------------- |
+| APIs                         | Enables all required GCP APIs                             |
+| Artifact Registry            | Docker registry for container images                      |
+| Firestore                    | Native-mode database                                      |
+| Cloud Memorystore            | Redis 7 cache instance                                    |
+| VPC Access Connector         | Private network bridge (Cloud Run → Redis)                |
+| Cloud Run                    | API service (placeholder image, CI/CD owns image updates) |
+| Pub/Sub                      | `flag-updates` topic for flag change fanout               |
+| Service Accounts             | Runtime SA for Cloud Run, deployer SA for GitHub Actions  |
+| Workload Identity Federation | Keyless auth for GitHub Actions                           |
+| IAM bindings                 | Least-privilege roles for each service account            |
 
 ### 3.1 Copy and fill in tfvars
 
@@ -172,12 +173,12 @@ long-lived keys (Workload Identity Federation).
 
 Go to: **GitHub repo → Settings → Secrets and variables → Actions → New repository secret**
 
-| Secret name | Value |
-|---|---|
-| `GCP_PROJECT_ID` | Your GCP project ID |
-| `GCP_REGION` | `us-central1` (or your chosen region) |
-| `GCP_WORKLOAD_IDENTITY_PROVIDER` | From `terraform output workload_identity_provider` |
-| `GCP_SERVICE_ACCOUNT_EMAIL` | From `terraform output github_actions_service_account` |
+| Secret name                      | Value                                                  |
+| -------------------------------- | ------------------------------------------------------ |
+| `GCP_PROJECT_ID`                 | Your GCP project ID                                    |
+| `GCP_REGION`                     | `us-central1` (or your chosen region)                  |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER` | From `terraform output workload_identity_provider`     |
+| `GCP_SERVICE_ACCOUNT_EMAIL`      | From `terraform output github_actions_service_account` |
 
 Or use the GitHub CLI (faster):
 
@@ -201,6 +202,7 @@ gh run list --workflow=deploy.yml --limit=1
 ```
 
 The deploy workflow will:
+
 1. Build the Docker image and push it to Artifact Registry
 2. Deploy the new image to Cloud Run
 3. Print the live service URL

@@ -107,11 +107,11 @@ graph TD
 
 ### 1.1 SDK Key Management
 
-| | |
-|---|---|
-| **Goal** | Secure, scoped API key system for SDK authentication |
-| **Complexity** | M |
-| **Dependencies** | None (first milestone) |
+|                  |                                                      |
+| ---------------- | ---------------------------------------------------- |
+| **Goal**         | Secure, scoped API key system for SDK authentication |
+| **Complexity**   | M                                                    |
+| **Dependencies** | None (first milestone)                               |
 
 **Deliverables:**
 
@@ -133,11 +133,11 @@ graph TD
 
 ### 1.2 Flag Data Model & CRUD
 
-| | |
-|---|---|
-| **Goal** | Multi-project flag storage with full REST API |
-| **Complexity** | L |
-| **Dependencies** | 1.1 (SDK key provides projectId scoping) |
+|                  |                                               |
+| ---------------- | --------------------------------------------- |
+| **Goal**         | Multi-project flag storage with full REST API |
+| **Complexity**   | L                                             |
+| **Dependencies** | 1.1 (SDK key provides projectId scoping)      |
 
 **Firestore schema:**
 
@@ -197,11 +197,11 @@ projects/{projectId}/flags/{flagKey}
 
 ### 1.3 Flag Evaluation Engine (Single)
 
-| | |
-|---|---|
-| **Goal** | Evaluate a single flag for a given user context |
-| **Complexity** | L |
-| **Dependencies** | 1.2 (needs flag data model) |
+|                  |                                                 |
+| ---------------- | ----------------------------------------------- |
+| **Goal**         | Evaluate a single flag for a given user context |
+| **Complexity**   | L                                               |
+| **Dependencies** | 1.2 (needs flag data model)                     |
 
 **Endpoint:** `POST /sdk/evaluate`
 **Auth:** `Authorization: Bearer <sdk-key>`
@@ -263,11 +263,11 @@ projects/{projectId}/flags/{flagKey}
 
 ### 1.4 Bulk Flag Evaluation
 
-| | |
-|---|---|
-| **Goal** | Evaluate up to 50 flags in a single request |
-| **Complexity** | M |
-| **Dependencies** | 1.3 (builds on single evaluation) |
+|                  |                                             |
+| ---------------- | ------------------------------------------- |
+| **Goal**         | Evaluate up to 50 flags in a single request |
+| **Complexity**   | M                                           |
+| **Dependencies** | 1.3 (builds on single evaluation)           |
 
 **Endpoint:** `POST /sdk/evaluate/bulk`
 **Auth:** `Authorization: Bearer <sdk-key>`
@@ -306,7 +306,7 @@ projects/{projectId}/flags/{flagKey}
 
 - [x] All flags evaluated and returned
 - [x] Unknown flag keys return null gracefully
-- [x] >50 flags returns 400
+- [x] > 50 flags returns 400
 - [x] Parallel evaluation verified (concurrent Firestore reads)
 - [x] Response includes `durationMs`
 - [x] Empty flags array returns empty object, not error
@@ -316,11 +316,11 @@ projects/{projectId}/flags/{flagKey}
 
 ### 1.5 Server-Sent Events Stream
 
-| | |
-|---|---|
-| **Goal** | Real-time flag updates pushed to connected SDK clients |
-| **Complexity** | L |
-| **Dependencies** | 1.2 (needs flag data to stream) |
+|                  |                                                        |
+| ---------------- | ------------------------------------------------------ |
+| **Goal**         | Real-time flag updates pushed to connected SDK clients |
+| **Complexity**   | L                                                      |
+| **Dependencies** | 1.2 (needs flag data to stream)                        |
 
 **Endpoint:** `GET /sdk/stream`
 **Auth:** `Authorization: Bearer <sdk-key>`
@@ -359,11 +359,11 @@ data: {"type":"ping"}
 
 ### 1.6 Event Ingestion
 
-| | |
-|---|---|
-| **Goal** | Accept evaluation and metric events from SDKs for experimentation |
-| **Complexity** | M |
-| **Dependencies** | 1.1 (needs SDK key validation) |
+|                  |                                                                   |
+| ---------------- | ----------------------------------------------------------------- |
+| **Goal**         | Accept evaluation and metric events from SDKs for experimentation |
+| **Complexity**   | M                                                                 |
+| **Dependencies** | 1.1 (needs SDK key validation)                                    |
 
 **Endpoint:** `POST /sdk/events`
 **Auth:** `Authorization: Bearer <sdk-key>`
@@ -405,7 +405,7 @@ data: {"type":"ping"}
 - [x] Valid events return 200 with correct accepted count
 - [x] Endpoint returns immediately (< 50ms), does not wait for Firestore write
 - [x] Events written correctly to Firestore (async assertion)
-- [x] >100 events: first 100 accepted, rest dropped, counts correct
+- [x] > 100 events: first 100 accepted, rest dropped, counts correct
 - [x] Malformed events drop gracefully without crashing
 - [ ] All tests passing
 
@@ -413,11 +413,11 @@ data: {"type":"ping"}
 
 ### Seed Script
 
-| | |
-|---|---|
-| **Goal** | Populate local Firestore emulator with all Room 404 flags |
-| **Complexity** | S |
-| **Dependencies** | 1.2 (needs flag data model) |
+|                  |                                                           |
+| ---------------- | --------------------------------------------------------- |
+| **Goal**         | Populate local Firestore emulator with all Room 404 flags |
+| **Complexity**   | S                                                         |
+| **Dependencies** | 1.2 (needs flag data model)                               |
 
 **Deliverable:** `scripts/seed-flags.ts`, runnable via `npm run seed`
 
@@ -434,11 +434,11 @@ data: {"type":"ping"}
 
 ### 2.1 Authentication
 
-| | |
-|---|---|
-| **Goal** | Secure admin access via Google IAP in production, simple bypass in local dev |
-| **Complexity** | M |
-| **Dependencies** | None (can start in parallel with Phase 1) |
+|                  |                                                                              |
+| ---------------- | ---------------------------------------------------------------------------- |
+| **Goal**         | Secure admin access via Google IAP in production, simple bypass in local dev |
+| **Complexity**   | M                                                                            |
+| **Dependencies** | None (can start in parallel with Phase 1)                                    |
 
 **Deliverables:**
 
@@ -458,20 +458,20 @@ data: {"type":"ping"}
 
 ### 2.2 Flag Management UI
 
-| | |
-|---|---|
-| **Goal** | Full CRUD interface for flags with real-time updates |
-| **Complexity** | XL |
-| **Dependencies** | 1.2 (flag API), 2.1 (auth) |
+|                  |                                                      |
+| ---------------- | ---------------------------------------------------- |
+| **Goal**         | Full CRUD interface for flags with real-time updates |
+| **Complexity**   | XL                                                   |
+| **Dependencies** | 1.2 (flag API), 2.1 (auth)                           |
 
 **Pages:**
 
-| Route | Purpose |
-|---|---|
-| `/flags` | Flag list with search, filter by tag/type/status |
-| `/flags/new` | Create flag form |
-| `/flags/:key` | Flag detail: edit, targeting rules, audit history |
-| `/flags/:key/rules` | Targeting rule builder |
+| Route               | Purpose                                           |
+| ------------------- | ------------------------------------------------- |
+| `/flags`            | Flag list with search, filter by tag/type/status  |
+| `/flags/new`        | Create flag form                                  |
+| `/flags/:key`       | Flag detail: edit, targeting rules, audit history |
+| `/flags/:key/rules` | Targeting rule builder                            |
 
 **Flag list requirements:**
 
@@ -504,11 +504,11 @@ data: {"type":"ping"}
 
 ### 2.3 Audit Log
 
-| | |
-|---|---|
-| **Goal** | Immutable record of every flag mutation |
-| **Complexity** | M |
-| **Dependencies** | 1.2 (flag mutations to audit) |
+|                  |                                         |
+| ---------------- | --------------------------------------- |
+| **Goal**         | Immutable record of every flag mutation |
+| **Complexity**   | M                                       |
+| **Dependencies** | 1.2 (flag mutations to audit)           |
 
 **Firestore schema:**
 
@@ -550,11 +550,11 @@ projects/{projectId}/audit/{auditId}
 
 ### 3.1 Experiment Data Model
 
-| | |
-|---|---|
-| **Goal** | Define and store experiment configurations |
-| **Complexity** | M |
-| **Dependencies** | 1.3 (experiments wrap flag evaluation) |
+|                  |                                            |
+| ---------------- | ------------------------------------------ |
+| **Goal**         | Define and store experiment configurations |
+| **Complexity**   | M                                          |
+| **Dependencies** | 1.3 (experiments wrap flag evaluation)     |
 
 **Firestore schema:**
 
@@ -594,11 +594,11 @@ projects/{projectId}/experiments/{experimentId}
 
 ### 3.2 Experiment Results Engine
 
-| | |
-|---|---|
-| **Goal** | Calculate statistical results from ingested events |
-| **Complexity** | XL |
-| **Dependencies** | 3.1 (experiment model), 1.6 (event data) |
+|                  |                                                    |
+| ---------------- | -------------------------------------------------- |
+| **Goal**         | Calculate statistical results from ingested events |
+| **Complexity**   | XL                                                 |
+| **Dependencies** | 3.1 (experiment model), 1.6 (event data)           |
 
 **Deliverable:** `GET /api/experiments/:id/results`
 
@@ -639,18 +639,18 @@ projects/{projectId}/experiments/{experimentId}
 
 ### 3.3 Experiment Results UI
 
-| | |
-|---|---|
-| **Goal** | Live dashboard for monitoring experiment progress |
-| **Complexity** | L |
-| **Dependencies** | 3.2 (results engine), 2.1 (auth) |
+|                  |                                                   |
+| ---------------- | ------------------------------------------------- |
+| **Goal**         | Live dashboard for monitoring experiment progress |
+| **Complexity**   | L                                                 |
+| **Dependencies** | 3.2 (results engine), 2.1 (auth)                  |
 
 **Pages:**
 
-| Route | Purpose |
-|---|---|
-| `/experiments` | List all experiments |
-| `/experiments/:id` | Live results panel |
+| Route              | Purpose              |
+| ------------------ | -------------------- |
+| `/experiments`     | List all experiments |
+| `/experiments/:id` | Live results panel   |
 
 **Results panel requirements:**
 
@@ -677,11 +677,11 @@ projects/{projectId}/experiments/{experimentId}
 
 ### 4.1 JavaScript/TypeScript SDK
 
-| | |
-|---|---|
-| **Goal** | Full-featured SDK client for browser and Node.js |
-| **Complexity** | XL |
-| **Dependencies** | 1.3, 1.4, 1.5, 1.6 (all SDK-facing endpoints) |
+|                  |                                                  |
+| ---------------- | ------------------------------------------------ |
+| **Goal**         | Full-featured SDK client for browser and Node.js |
+| **Complexity**   | XL                                               |
+| **Dependencies** | 1.3, 1.4, 1.5, 1.6 (all SDK-facing endpoints)    |
 
 **Package:** `@mystweaver/sdk` (published to npm)
 
@@ -739,22 +739,22 @@ await client.close()
 
 ### 4.2 Mock Client
 
-| | |
-|---|---|
-| **Goal** | Drop-in test replacement for the real SDK client |
-| **Complexity** | S |
-| **Dependencies** | 4.1 (implements same interface) |
+|                  |                                                  |
+| ---------------- | ------------------------------------------------ |
+| **Goal**         | Drop-in test replacement for the real SDK client |
+| **Complexity**   | S                                                |
+| **Dependencies** | 4.1 (implements same interface)                  |
 
 **Import:** `import { MystWeaverMockClient } from '@mystweaver/sdk/mock'`
 
 ```typescript
 const client = new MystWeaverMockClient({
-  flags: { 'game.task-timer-seconds': 8, 'powerups.jetpack-enabled': true }
-})
+  flags: { 'game.task-timer-seconds': 8, 'powerups.jetpack-enabled': true },
+});
 
-client.override('game.task-timer-seconds', 5)
-client.simulateFlagChange('powerups.jetpack-enabled', false)
-expect(client.trackedEvents).toContainEqual({ event: 'room.completed', userId: 'plr_123' })
+client.override('game.task-timer-seconds', 5);
+client.simulateFlagChange('powerups.jetpack-enabled', false);
+expect(client.trackedEvents).toContainEqual({ event: 'room.completed', userId: 'plr_123' });
 ```
 
 **Definition of done:**
@@ -769,11 +769,11 @@ expect(client.trackedEvents).toContainEqual({ event: 'room.completed', userId: '
 
 ### 4.3 SDK Tests
 
-| | |
-|---|---|
-| **Goal** | Comprehensive test suite across environments |
-| **Complexity** | M |
-| **Dependencies** | 4.1, 4.2 |
+|                  |                                              |
+| ---------------- | -------------------------------------------- |
+| **Goal**         | Comprehensive test suite across environments |
+| **Complexity**   | M                                            |
+| **Dependencies** | 4.1, 4.2                                     |
 
 **Required tests:**
 
@@ -797,10 +797,10 @@ expect(client.trackedEvents).toContainEqual({ event: 'room.completed', userId: '
 
 ### 5.1 Infrastructure (Terraform)
 
-| | |
-|---|---|
-| **Goal** | All GCP resources defined as code |
-| **Complexity** | L |
+|                  |                                         |
+| ---------------- | --------------------------------------- |
+| **Goal**         | All GCP resources defined as code       |
+| **Complexity**   | L                                       |
 | **Dependencies** | 1.1 (needs to know what services exist) |
 
 **Resources in `infra/terraform/`:**
@@ -820,10 +820,10 @@ expect(client.trackedEvents).toContainEqual({ event: 'room.completed', userId: '
 
 ### 5.2 CI/CD (GitHub Actions)
 
-| | |
-|---|---|
-| **Goal** | Automated testing and deployment pipelines |
-| **Complexity** | M |
+|                  |                                                     |
+| ---------------- | --------------------------------------------------- |
+| **Goal**         | Automated testing and deployment pipelines          |
+| **Complexity**   | M                                                   |
 | **Dependencies** | 5.1 (infra must exist), 4.3 (SDK tests in pipeline) |
 
 **`.github/workflows/ci.yml`** (on every PR):
@@ -847,21 +847,21 @@ expect(client.trackedEvents).toContainEqual({ event: 'room.completed', userId: '
 
 ### 5.3 Observability
 
-| | |
-|---|---|
-| **Goal** | Structured logging, tracing, and custom metrics |
-| **Complexity** | M |
-| **Dependencies** | 5.1 (needs monitoring infrastructure) |
+|                  |                                                 |
+| ---------------- | ----------------------------------------------- |
+| **Goal**         | Structured logging, tracing, and custom metrics |
+| **Complexity**   | M                                               |
+| **Dependencies** | 5.1 (needs monitoring infrastructure)           |
 
 **Custom metrics:**
 
-| Metric | Type | Labels |
-|---|---|---|
-| `flag_evaluations_total` | Counter | `flagKey` |
-| `flag_evaluation_latency_ms` | Histogram | |
-| `sse_connections_active` | Gauge | |
-| `events_ingested_total` | Counter | |
-| `experiment_sample_size` | Gauge | `experimentId`, `variant` |
+| Metric                       | Type      | Labels                    |
+| ---------------------------- | --------- | ------------------------- |
+| `flag_evaluations_total`     | Counter   | `flagKey`                 |
+| `flag_evaluation_latency_ms` | Histogram |                           |
+| `sse_connections_active`     | Gauge     |                           |
+| `events_ingested_total`      | Counter   |                           |
+| `experiment_sample_size`     | Gauge     | `experimentId`, `variant` |
 
 **Alert policies:**
 
@@ -873,11 +873,11 @@ expect(client.trackedEvents).toContainEqual({ event: 'room.completed', userId: '
 
 ### 5.4 Security Hardening
 
-| | |
-|---|---|
-| **Goal** | Production-grade security posture |
-| **Complexity** | M |
-| **Dependencies** | 5.1 |
+|                  |                                   |
+| ---------------- | --------------------------------- |
+| **Goal**         | Production-grade security posture |
+| **Complexity**   | M                                 |
+| **Dependencies** | 5.1                               |
 
 **Checklist:**
 
@@ -903,53 +903,53 @@ The following flags must exist in MystWeaver before Room 404 integration testing
 
 **Boolean flags:**
 
-| Key | Default |
-|---|---|
-| `rooms.parry-enabled` | `true` |
-| `rooms.leak-enabled` | `true` |
-| `rooms.hold-still-enabled` | `true` |
-| `rooms.ai-prompt-enabled` | `false` |
-| `rooms.mirror-enabled` | `false` |
-| `powerups.jetpack-enabled` | `true` |
-| `powerups.bonsai-enabled` | `true` |
-| `powerups.merge-conflict-enabled` | `true` |
-| `powerups.fork-bomb-enabled` | `true` |
-| `powerups.cursed-bonsai-enabled` | `true` |
-| `game.rubberband-enabled` | `true` |
-| `game.sabotage-mode` | `false` |
-| `game.audience-vote-enabled` | `false` |
-| `game.kill-switch-room` | `false` |
+| Key                               | Default |
+| --------------------------------- | ------- |
+| `rooms.parry-enabled`             | `true`  |
+| `rooms.leak-enabled`              | `true`  |
+| `rooms.hold-still-enabled`        | `true`  |
+| `rooms.ai-prompt-enabled`         | `false` |
+| `rooms.mirror-enabled`            | `false` |
+| `powerups.jetpack-enabled`        | `true`  |
+| `powerups.bonsai-enabled`         | `true`  |
+| `powerups.merge-conflict-enabled` | `true`  |
+| `powerups.fork-bomb-enabled`      | `true`  |
+| `powerups.cursed-bonsai-enabled`  | `true`  |
+| `game.rubberband-enabled`         | `true`  |
+| `game.sabotage-mode`              | `false` |
+| `game.audience-vote-enabled`      | `false` |
+| `game.kill-switch-room`           | `false` |
 
 **Number flags:**
 
-| Key | Default |
-|---|---|
-| `game.task-timer-seconds` | `8` |
-| `game.lives-per-floor` | `3` |
-| `game.max-players` | `100` |
-| `game.rubberband-multiplier` | `2.0` |
-| `game.total-floors` | `15` |
-| `game.vending-machine-base-rate` | `0.10` |
+| Key                              | Default |
+| -------------------------------- | ------- |
+| `game.task-timer-seconds`        | `8`     |
+| `game.lives-per-floor`           | `3`     |
+| `game.max-players`               | `100`   |
+| `game.rubberband-multiplier`     | `2.0`   |
+| `game.total-floors`              | `15`    |
+| `game.vending-machine-base-rate` | `0.10`  |
 
 **String flags:**
 
-| Key | Default |
-|---|---|
-| `ai.chaos-room-difficulty` | `"weird"` |
-| `ai.room-flavor-model` | `"fast"` |
+| Key                           | Default      |
+| ----------------------------- | ------------ |
+| `ai.chaos-room-difficulty`    | `"weird"`    |
+| `ai.room-flavor-model`        | `"fast"`     |
 | `ai.procedural-seed-strategy` | `"balanced"` |
 
 **JSON flags:**
 
-| Key | Default |
-|---|---|
+| Key                 | Default                                                                             |
+| ------------------- | ----------------------------------------------------------------------------------- |
 | `game.tier-weights` | `{ "legendary": 0.05, "epic": 0.15, "rare": 0.25, "common": 0.35, "cursed": 0.20 }` |
 
 ### Experiments
 
-| Experiment | Flag | Variants | Metric |
-|---|---|---|---|
-| `experiment.task-timer` | `game.task-timer-seconds` | `8-seconds` (8), `5-seconds` (5) | `room.completed` |
+| Experiment                            | Flag                            | Variants                                       | Metric                 |
+| ------------------------------------- | ------------------------------- | ---------------------------------------------- | ---------------------- |
+| `experiment.task-timer`               | `game.task-timer-seconds`       | `8-seconds` (8), `5-seconds` (5)               | `room.completed`       |
 | `experiment.vending-reveal-animation` | `powerups.vending-reveal-style` | `dramatic` ("dramatic"), `instant` ("instant") | `powerup.satisfaction` |
 
 ### CORS Allowlist
@@ -966,46 +966,46 @@ http://localhost:5174
 
 The project board uses four columns:
 
-| Column | Description |
-|---|---|
-| **Backlog** | All milestones not yet started |
+| Column          | Description                                 |
+| --------------- | ------------------------------------------- |
+| **Backlog**     | All milestones not yet started              |
 | **In Progress** | Currently being worked on (max 2 at a time) |
-| **In Review** | PR open, awaiting review |
-| **Done** | Merged to main, tests passing |
+| **In Review**   | PR open, awaiting review                    |
+| **Done**        | Merged to main, tests passing               |
 
 ### Issue Labels
 
-| Label | Description |
-|---|---|
+| Label                 | Description                          |
+| --------------------- | ------------------------------------ |
 | `phase:1` - `phase:5` | Which phase the milestone belongs to |
-| `api` | Backend API work |
-| `ui` | Frontend/admin UI work |
-| `sdk` | SDK package work |
-| `infra` | Terraform, CI/CD, GCP infrastructure |
-| `testing` | Test suite work |
-| `blocker:room404` | Blocks Room 404 integration |
+| `api`                 | Backend API work                     |
+| `ui`                  | Frontend/admin UI work               |
+| `sdk`                 | SDK package work                     |
+| `infra`               | Terraform, CI/CD, GCP infrastructure |
+| `testing`             | Test suite work                      |
+| `blocker:room404`     | Blocks Room 404 integration          |
 
 ### Issues (one per milestone)
 
-| Issue | Title | Labels |
-|---|---|---|
-| #1 | SDK Key Management | `phase:1`, `api`, `blocker:room404` |
-| #2 | Flag Data Model & CRUD | `phase:1`, `api`, `blocker:room404` |
-| #3 | Flag Evaluation Engine (Single) | `phase:1`, `api`, `blocker:room404` |
-| #4 | Bulk Flag Evaluation | `phase:1`, `api`, `blocker:room404` |
-| #5 | SSE Stream | `phase:1`, `api`, `blocker:room404` |
-| #6 | Event Ingestion | `phase:1`, `api`, `blocker:room404` |
-| #7 | Seed Script | `phase:1`, `api`, `testing`, `blocker:room404` |
-| #8 | Authentication | `phase:2`, `api`, `ui` |
-| #9 | Flag Management UI | `phase:2`, `ui` |
-| #10 | Audit Log | `phase:2`, `api`, `ui` |
-| #11 | Experiment Data Model | `phase:3`, `api` |
-| #12 | Experiment Results Engine | `phase:3`, `api` |
-| #13 | Experiment Results UI | `phase:3`, `ui` |
-| #14 | JS/TS SDK | `phase:4`, `sdk`, `blocker:room404` |
-| #15 | Mock Client | `phase:4`, `sdk`, `blocker:room404` |
-| #16 | SDK Tests | `phase:4`, `sdk`, `testing`, `blocker:room404` |
-| #17 | Infrastructure (Terraform) | `phase:5`, `infra` |
-| #18 | CI/CD (GitHub Actions) | `phase:5`, `infra`, `testing` |
-| #19 | Observability | `phase:5`, `infra` |
-| #20 | Security Hardening | `phase:5`, `infra`, `api` |
+| Issue | Title                           | Labels                                         |
+| ----- | ------------------------------- | ---------------------------------------------- |
+| #1    | SDK Key Management              | `phase:1`, `api`, `blocker:room404`            |
+| #2    | Flag Data Model & CRUD          | `phase:1`, `api`, `blocker:room404`            |
+| #3    | Flag Evaluation Engine (Single) | `phase:1`, `api`, `blocker:room404`            |
+| #4    | Bulk Flag Evaluation            | `phase:1`, `api`, `blocker:room404`            |
+| #5    | SSE Stream                      | `phase:1`, `api`, `blocker:room404`            |
+| #6    | Event Ingestion                 | `phase:1`, `api`, `blocker:room404`            |
+| #7    | Seed Script                     | `phase:1`, `api`, `testing`, `blocker:room404` |
+| #8    | Authentication                  | `phase:2`, `api`, `ui`                         |
+| #9    | Flag Management UI              | `phase:2`, `ui`                                |
+| #10   | Audit Log                       | `phase:2`, `api`, `ui`                         |
+| #11   | Experiment Data Model           | `phase:3`, `api`                               |
+| #12   | Experiment Results Engine       | `phase:3`, `api`                               |
+| #13   | Experiment Results UI           | `phase:3`, `ui`                                |
+| #14   | JS/TS SDK                       | `phase:4`, `sdk`, `blocker:room404`            |
+| #15   | Mock Client                     | `phase:4`, `sdk`, `blocker:room404`            |
+| #16   | SDK Tests                       | `phase:4`, `sdk`, `testing`, `blocker:room404` |
+| #17   | Infrastructure (Terraform)      | `phase:5`, `infra`                             |
+| #18   | CI/CD (GitHub Actions)          | `phase:5`, `infra`, `testing`                  |
+| #19   | Observability                   | `phase:5`, `infra`                             |
+| #20   | Security Hardening              | `phase:5`, `infra`, `api`                      |

@@ -111,6 +111,7 @@ git branch -vv
 Visit: `https://github.com/yourusername/mystweaver`
 
 You should see:
+
 - All project files
 - Commit history
 - README.md displayed
@@ -212,6 +213,7 @@ gh pr create --title "Add flag evaluation logic" --body "Implements core flag ev
 ### After Review and CI Passes
 
 Merge via GitHub UI (recommended to maintain linear history):
+
 - Select **"Squash and merge"** for cleaner history, or
 - Select **"Create a merge commit"** to preserve commits
 
@@ -235,7 +237,7 @@ fi
 # Run linting before commit
 npm run lint
 
-# Run type check before commit  
+# Run type check before commit
 npm run typecheck
 EOF
 

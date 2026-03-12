@@ -85,8 +85,7 @@ export function RuleEditor({ rule, flagType, index, onChange, onRemove }: RuleEd
             onChange={(e) =>
               onChange({
                 ...rule,
-                rolloutPercentage:
-                  e.target.value === '' ? undefined : Number(e.target.value),
+                rolloutPercentage: e.target.value === '' ? undefined : Number(e.target.value),
               })
             }
             className="w-20 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"

@@ -99,9 +99,7 @@ export function FlagForm({ mode, initial, onSubmit, submitting }: FlagFormProps)
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
-      {error && (
-        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
-      )}
+      {error && <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>}
 
       {/* Key (create only) */}
       {mode === 'create' && (
@@ -179,7 +177,12 @@ export function FlagForm({ mode, initial, onSubmit, submitting }: FlagFormProps)
       </div>
 
       {/* Default value */}
-      <ValueInput type={type} value={defaultValue} onChange={setDefaultValue} label="Default value" />
+      <ValueInput
+        type={type}
+        value={defaultValue}
+        onChange={setDefaultValue}
+        label="Default value"
+      />
 
       {/* Rules */}
       <div className="space-y-3">

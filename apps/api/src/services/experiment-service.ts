@@ -100,12 +100,8 @@ export async function getExperiment(
   return { id: doc.id, ...doc.data() } as ExperimentDocument;
 }
 
-export async function listExperiments(
-  projectId: string,
-): Promise<ExperimentDocument[]> {
-  const snapshot = await experimentsCollection(projectId)
-    .orderBy('createdAt', 'desc')
-    .get();
+export async function listExperiments(projectId: string): Promise<ExperimentDocument[]> {
+  const snapshot = await experimentsCollection(projectId).orderBy('createdAt', 'desc').get();
   return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as ExperimentDocument);
 }
 
@@ -131,10 +127,7 @@ export async function updateExperiment(
   return { id: updated.id, ...updated.data() } as ExperimentDocument;
 }
 
-export async function deleteExperiment(
-  projectId: string,
-  id: string,
-): Promise<void> {
+export async function deleteExperiment(projectId: string, id: string): Promise<void> {
   const docRef = experimentsCollection(projectId).doc(id);
   const existing = await docRef.get();
   if (!existing.exists) throw new AppError(`Experiment "${id}" not found`, 404);

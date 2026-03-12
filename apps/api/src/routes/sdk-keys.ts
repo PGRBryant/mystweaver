@@ -6,18 +6,14 @@ import type { CreateSDKKeyRequest } from '../types/sdk-key';
 const router = Router();
 
 // POST /api/sdk-keys — create a new SDK key
-router.post(
-  '/',
-  validateBody({ name: 'string', projectId: 'string' }),
-  async (req, res, next) => {
-    try {
-      const result = await sdkKeyService.createSDKKey(req.body as CreateSDKKeyRequest);
-      res.status(201).json(result);
-    } catch (err) {
-      next(err);
-    }
-  },
-);
+router.post('/', validateBody({ name: 'string', projectId: 'string' }), async (req, res, next) => {
+  try {
+    const result = await sdkKeyService.createSDKKey(req.body as CreateSDKKeyRequest);
+    res.status(201).json(result);
+  } catch (err) {
+    next(err);
+  }
+});
 
 // GET /api/sdk-keys — list all SDK keys (metadata only)
 router.get('/', async (_req, res, next) => {

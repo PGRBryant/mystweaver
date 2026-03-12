@@ -43,44 +43,205 @@ interface FlagSeed {
 
 const FLAGS: FlagSeed[] = [
   // Boolean flags — rooms
-  { key: 'rooms.parry-enabled', name: 'Parry Room Enabled', type: 'boolean', defaultValue: true, description: 'Enable the Parry room type', tags: ['rooms'] },
-  { key: 'rooms.leak-enabled', name: 'Leak Room Enabled', type: 'boolean', defaultValue: true, description: 'Enable the Leak room type', tags: ['rooms'] },
-  { key: 'rooms.hold-still-enabled', name: 'Hold Still Room Enabled', type: 'boolean', defaultValue: true, description: 'Enable the Hold Still room type', tags: ['rooms'] },
-  { key: 'rooms.ai-prompt-enabled', name: 'AI Prompt Room Enabled', type: 'boolean', defaultValue: false, description: 'Enable the AI Prompt room type', tags: ['rooms', 'ai'] },
-  { key: 'rooms.mirror-enabled', name: 'Mirror Room Enabled', type: 'boolean', defaultValue: false, description: 'Enable the Mirror room type', tags: ['rooms'] },
+  {
+    key: 'rooms.parry-enabled',
+    name: 'Parry Room Enabled',
+    type: 'boolean',
+    defaultValue: true,
+    description: 'Enable the Parry room type',
+    tags: ['rooms'],
+  },
+  {
+    key: 'rooms.leak-enabled',
+    name: 'Leak Room Enabled',
+    type: 'boolean',
+    defaultValue: true,
+    description: 'Enable the Leak room type',
+    tags: ['rooms'],
+  },
+  {
+    key: 'rooms.hold-still-enabled',
+    name: 'Hold Still Room Enabled',
+    type: 'boolean',
+    defaultValue: true,
+    description: 'Enable the Hold Still room type',
+    tags: ['rooms'],
+  },
+  {
+    key: 'rooms.ai-prompt-enabled',
+    name: 'AI Prompt Room Enabled',
+    type: 'boolean',
+    defaultValue: false,
+    description: 'Enable the AI Prompt room type',
+    tags: ['rooms', 'ai'],
+  },
+  {
+    key: 'rooms.mirror-enabled',
+    name: 'Mirror Room Enabled',
+    type: 'boolean',
+    defaultValue: false,
+    description: 'Enable the Mirror room type',
+    tags: ['rooms'],
+  },
 
   // Boolean flags — powerups
-  { key: 'powerups.jetpack-enabled', name: 'Jetpack Powerup', type: 'boolean', defaultValue: true, description: 'Enable Jetpack powerup in vending machine', tags: ['powerups'] },
-  { key: 'powerups.bonsai-enabled', name: 'Bonsai Powerup', type: 'boolean', defaultValue: true, description: 'Enable Bonsai powerup in vending machine', tags: ['powerups'] },
-  { key: 'powerups.merge-conflict-enabled', name: 'Merge Conflict Powerup', type: 'boolean', defaultValue: true, description: 'Enable Merge Conflict powerup', tags: ['powerups'] },
-  { key: 'powerups.fork-bomb-enabled', name: 'Fork Bomb Powerup', type: 'boolean', defaultValue: true, description: 'Enable Fork Bomb powerup', tags: ['powerups'] },
-  { key: 'powerups.cursed-bonsai-enabled', name: 'Cursed Bonsai Powerup', type: 'boolean', defaultValue: true, description: 'Enable Cursed Bonsai powerup', tags: ['powerups'] },
+  {
+    key: 'powerups.jetpack-enabled',
+    name: 'Jetpack Powerup',
+    type: 'boolean',
+    defaultValue: true,
+    description: 'Enable Jetpack powerup in vending machine',
+    tags: ['powerups'],
+  },
+  {
+    key: 'powerups.bonsai-enabled',
+    name: 'Bonsai Powerup',
+    type: 'boolean',
+    defaultValue: true,
+    description: 'Enable Bonsai powerup in vending machine',
+    tags: ['powerups'],
+  },
+  {
+    key: 'powerups.merge-conflict-enabled',
+    name: 'Merge Conflict Powerup',
+    type: 'boolean',
+    defaultValue: true,
+    description: 'Enable Merge Conflict powerup',
+    tags: ['powerups'],
+  },
+  {
+    key: 'powerups.fork-bomb-enabled',
+    name: 'Fork Bomb Powerup',
+    type: 'boolean',
+    defaultValue: true,
+    description: 'Enable Fork Bomb powerup',
+    tags: ['powerups'],
+  },
+  {
+    key: 'powerups.cursed-bonsai-enabled',
+    name: 'Cursed Bonsai Powerup',
+    type: 'boolean',
+    defaultValue: true,
+    description: 'Enable Cursed Bonsai powerup',
+    tags: ['powerups'],
+  },
 
   // Boolean flags — game mechanics
-  { key: 'game.rubberband-enabled', name: 'Rubberband Mechanic', type: 'boolean', defaultValue: true, description: 'Enable rubberband catch-up mechanic', tags: ['game'] },
-  { key: 'game.sabotage-mode', name: 'Sabotage Mode', type: 'boolean', defaultValue: false, description: 'Enable sabotage mode gameplay', tags: ['game'] },
-  { key: 'game.audience-vote-enabled', name: 'Audience Vote', type: 'boolean', defaultValue: false, description: 'Enable audience voting on room outcomes', tags: ['game'] },
-  { key: 'game.kill-switch-room', name: 'Room Kill Switch', type: 'boolean', defaultValue: false, description: 'Emergency kill switch to disable all rooms', tags: ['game', 'ops'] },
+  {
+    key: 'game.rubberband-enabled',
+    name: 'Rubberband Mechanic',
+    type: 'boolean',
+    defaultValue: true,
+    description: 'Enable rubberband catch-up mechanic',
+    tags: ['game'],
+  },
+  {
+    key: 'game.sabotage-mode',
+    name: 'Sabotage Mode',
+    type: 'boolean',
+    defaultValue: false,
+    description: 'Enable sabotage mode gameplay',
+    tags: ['game'],
+  },
+  {
+    key: 'game.audience-vote-enabled',
+    name: 'Audience Vote',
+    type: 'boolean',
+    defaultValue: false,
+    description: 'Enable audience voting on room outcomes',
+    tags: ['game'],
+  },
+  {
+    key: 'game.kill-switch-room',
+    name: 'Room Kill Switch',
+    type: 'boolean',
+    defaultValue: false,
+    description: 'Emergency kill switch to disable all rooms',
+    tags: ['game', 'ops'],
+  },
 
   // Number flags
-  { key: 'game.task-timer-seconds', name: 'Task Timer', type: 'number', defaultValue: 8, description: 'Seconds allowed per task', tags: ['game'] },
-  { key: 'game.lives-per-floor', name: 'Lives Per Floor', type: 'number', defaultValue: 3, description: 'Number of lives per floor', tags: ['game'] },
-  { key: 'game.max-players', name: 'Max Players', type: 'number', defaultValue: 100, description: 'Maximum players per game session', tags: ['game'] },
-  { key: 'game.rubberband-multiplier', name: 'Rubberband Multiplier', type: 'number', defaultValue: 2.0, description: 'Score multiplier for rubberband mechanic', tags: ['game'] },
-  { key: 'game.total-floors', name: 'Total Floors', type: 'number', defaultValue: 15, description: 'Number of floors in a game', tags: ['game'] },
-  { key: 'game.vending-machine-base-rate', name: 'Vending Machine Base Rate', type: 'number', defaultValue: 0.10, description: 'Base probability of vending machine spawn', tags: ['game', 'powerups'] },
+  {
+    key: 'game.task-timer-seconds',
+    name: 'Task Timer',
+    type: 'number',
+    defaultValue: 8,
+    description: 'Seconds allowed per task',
+    tags: ['game'],
+  },
+  {
+    key: 'game.lives-per-floor',
+    name: 'Lives Per Floor',
+    type: 'number',
+    defaultValue: 3,
+    description: 'Number of lives per floor',
+    tags: ['game'],
+  },
+  {
+    key: 'game.max-players',
+    name: 'Max Players',
+    type: 'number',
+    defaultValue: 100,
+    description: 'Maximum players per game session',
+    tags: ['game'],
+  },
+  {
+    key: 'game.rubberband-multiplier',
+    name: 'Rubberband Multiplier',
+    type: 'number',
+    defaultValue: 2.0,
+    description: 'Score multiplier for rubberband mechanic',
+    tags: ['game'],
+  },
+  {
+    key: 'game.total-floors',
+    name: 'Total Floors',
+    type: 'number',
+    defaultValue: 15,
+    description: 'Number of floors in a game',
+    tags: ['game'],
+  },
+  {
+    key: 'game.vending-machine-base-rate',
+    name: 'Vending Machine Base Rate',
+    type: 'number',
+    defaultValue: 0.1,
+    description: 'Base probability of vending machine spawn',
+    tags: ['game', 'powerups'],
+  },
 
   // String flags
-  { key: 'ai.chaos-room-difficulty', name: 'Chaos Room Difficulty', type: 'string', defaultValue: 'weird', description: 'AI chaos room difficulty level', tags: ['ai'] },
-  { key: 'ai.room-flavor-model', name: 'Room Flavor Model', type: 'string', defaultValue: 'fast', description: 'Which AI model to use for room flavor text', tags: ['ai'] },
-  { key: 'ai.procedural-seed-strategy', name: 'Procedural Seed Strategy', type: 'string', defaultValue: 'balanced', description: 'Strategy for procedural generation seeding', tags: ['ai'] },
+  {
+    key: 'ai.chaos-room-difficulty',
+    name: 'Chaos Room Difficulty',
+    type: 'string',
+    defaultValue: 'weird',
+    description: 'AI chaos room difficulty level',
+    tags: ['ai'],
+  },
+  {
+    key: 'ai.room-flavor-model',
+    name: 'Room Flavor Model',
+    type: 'string',
+    defaultValue: 'fast',
+    description: 'Which AI model to use for room flavor text',
+    tags: ['ai'],
+  },
+  {
+    key: 'ai.procedural-seed-strategy',
+    name: 'Procedural Seed Strategy',
+    type: 'string',
+    defaultValue: 'balanced',
+    description: 'Strategy for procedural generation seeding',
+    tags: ['ai'],
+  },
 
   // JSON flags
   {
     key: 'game.tier-weights',
     name: 'Tier Weights',
     type: 'json',
-    defaultValue: { legendary: 0.05, epic: 0.15, rare: 0.25, common: 0.35, cursed: 0.20 },
+    defaultValue: { legendary: 0.05, epic: 0.15, rare: 0.25, common: 0.35, cursed: 0.2 },
     description: 'Probability weights for item tiers',
     tags: ['game'],
   },
@@ -219,7 +380,9 @@ async function main(): Promise<void> {
   console.log('');
   console.log('MystWeaver Seed Script');
   console.log('═════════════════════════════════════════');
-  console.log(`Target: Firestore at ${process.env.FIRESTORE_EMULATOR_HOST ?? '(production — are you sure?)'}`);
+  console.log(
+    `Target: Firestore at ${process.env.FIRESTORE_EMULATOR_HOST ?? '(production — are you sure?)'}`,
+  );
   console.log('');
 
   if (!process.env.FIRESTORE_EMULATOR_HOST) {

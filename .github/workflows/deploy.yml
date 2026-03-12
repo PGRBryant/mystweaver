@@ -1,8 +1,9 @@
 name: Deploy
 
 on:
-  push:
-    branches: [main]
+  # Auto-deploy disabled until WIF attribute condition is fixed (Phase 5).
+  # push:
+  #   branches: [main]
   workflow_dispatch:
 
 permissions:

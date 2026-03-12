@@ -17,6 +17,7 @@ npm run dev --workspace=@mystweaver/web
 ```
 
 Local URLs:
+
 - **Web UI**: http://localhost:5173
 - **API**: http://localhost:3000
 - **Firestore emulator**: localhost:8080 (no UI — bare gRPC/REST endpoint)
@@ -43,16 +44,16 @@ git push origin feature/my-feature
 
 ## Common Commands
 
-| Command | Purpose |
-|---------|---------|
-| `npm install` | Install/update dependencies |
-| `npm run dev --workspace=@mystweaver/api` | Run API only |
-| `npm run typecheck` | Type check all packages |
-| `npm run lint` | Lint all packages |
-| `npm run test` | Run tests |
-| `npm run build` | Build all packages |
-| `npm run format` | Auto-format code |
-| `npm run clean` | Remove build artifacts |
+| Command                                   | Purpose                     |
+| ----------------------------------------- | --------------------------- |
+| `npm install`                             | Install/update dependencies |
+| `npm run dev --workspace=@mystweaver/api` | Run API only                |
+| `npm run typecheck`                       | Type check all packages     |
+| `npm run lint`                            | Lint all packages           |
+| `npm run test`                            | Run tests                   |
+| `npm run build`                           | Build all packages          |
+| `npm run format`                          | Auto-format code            |
+| `npm run clean`                           | Remove build artifacts      |
 
 ---
 
@@ -105,17 +106,20 @@ Full guide: [GCP_SETUP.md](GCP_SETUP.md)
 ## Quick Troubleshooting
 
 **Docker won't start?**
+
 ```bash
 docker-compose logs firestore
 docker-compose down -v && docker-compose up -d
 ```
 
 **TypeScript errors?**
+
 ```bash
 npm run typecheck
 ```
 
 **Port already in use?**
+
 ```bash
 lsof -i :3000   # find process
 kill -9 <PID>
@@ -125,10 +129,10 @@ kill -9 <PID>
 
 ## Documentation
 
-| Doc | Purpose |
-|-----|---------|
-| [README.md](README.md) | Project overview |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Dev guidelines |
-| [DOCKER.md](DOCKER.md) | Local dev environment |
-| [GITHUB_SETUP.md](GITHUB_SETUP.md) | GitHub repo init |
-| [GCP_SETUP.md](GCP_SETUP.md) | GCP + Terraform + WIF |
+| Doc                                | Purpose               |
+| ---------------------------------- | --------------------- |
+| [README.md](README.md)             | Project overview      |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Dev guidelines        |
+| [DOCKER.md](DOCKER.md)             | Local dev environment |
+| [GITHUB_SETUP.md](GITHUB_SETUP.md) | GitHub repo init      |
+| [GCP_SETUP.md](GCP_SETUP.md)       | GCP + Terraform + WIF |

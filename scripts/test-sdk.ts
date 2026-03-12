@@ -38,7 +38,12 @@ async function main() {
 
   console.log('\n--- Bulk evaluation ---');
   const all = await client.evaluateAll(
-    ['game.task-timer-seconds', 'game.lives-per-floor', 'powerups.jetpack-enabled', 'nonexistent-flag'],
+    [
+      'game.task-timer-seconds',
+      'game.lives-per-floor',
+      'powerups.jetpack-enabled',
+      'nonexistent-flag',
+    ],
     ctx,
   );
   console.log('bulk results:', all);

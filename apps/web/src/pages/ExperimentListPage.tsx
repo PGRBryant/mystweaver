@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   fetchExperiments,
@@ -41,7 +41,9 @@ export function ExperimentListPage() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const handleStart = async (id: string) => {
     try {
@@ -83,15 +85,14 @@ export function ExperimentListPage() {
         </button>
       </div>
 
-      {error && (
-        <div className="rounded-md bg-red-50 p-4 text-sm text-red-700 mb-4">
-          {error}
-        </div>
-      )}
+      {error && <div className="rounded-md bg-red-50 p-4 text-sm text-red-700 mb-4">{error}</div>}
 
       {showCreate && (
         <CreateExperimentForm
-          onCreated={() => { setShowCreate(false); load(); }}
+          onCreated={() => {
+            setShowCreate(false);
+            load();
+          }}
           onCancel={() => setShowCreate(false)}
         />
       )}
@@ -107,12 +108,24 @@ export function ExperimentListPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Flag</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Metric</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Started</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Name
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Flag
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Metric
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Started
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 bg-white">
@@ -129,7 +142,9 @@ export function ExperimentListPage() {
                   <td className="px-4 py-3 text-sm font-mono text-gray-600">{exp.flagKey}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">{exp.metric}</td>
                   <td className="px-4 py-3 text-sm">
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[exp.status]}`}>
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[exp.status]}`}
+                    >
                       {exp.status}
                     </span>
                   </td>
@@ -139,16 +154,25 @@ export function ExperimentListPage() {
                   <td className="px-4 py-3 text-sm space-x-2">
                     {exp.status === 'draft' && (
                       <>
-                        <button onClick={() => handleStart(exp.id)} className="text-green-600 hover:text-green-500 text-xs font-medium">
+                        <button
+                          onClick={() => handleStart(exp.id)}
+                          className="text-green-600 hover:text-green-500 text-xs font-medium"
+                        >
                           Start
                         </button>
-                        <button onClick={() => handleDelete(exp.id)} className="text-red-600 hover:text-red-500 text-xs font-medium">
+                        <button
+                          onClick={() => handleDelete(exp.id)}
+                          className="text-red-600 hover:text-red-500 text-xs font-medium"
+                        >
                           Delete
                         </button>
                       </>
                     )}
                     {exp.status === 'running' && (
-                      <button onClick={() => handleStop(exp.id)} className="text-yellow-600 hover:text-yellow-500 text-xs font-medium">
+                      <button
+                        onClick={() => handleStop(exp.id)}
+                        className="text-yellow-600 hover:text-yellow-500 text-xs font-medium"
+                      >
                         Stop
                       </button>
                     )}
@@ -194,7 +218,11 @@ function CreateExperimentForm({
     try {
       // Try to parse variant values as JSON, fall back to string.
       const parseValue = (v: string): unknown => {
-        try { return JSON.parse(v); } catch { return v; }
+        try {
+          return JSON.parse(v);
+        } catch {
+          return v;
+        }
       };
 
       await createExperiment({
@@ -215,7 +243,10 @@ function CreateExperimentForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mb-6 rounded-lg border border-gray-200 bg-white p-4 space-y-4">
+    <form
+      onSubmit={handleSubmit}
+      className="mb-6 rounded-lg border border-gray-200 bg-white p-4 space-y-4"
+    >
       <h3 className="text-sm font-semibold text-gray-900">New experiment</h3>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
@@ -250,31 +281,81 @@ function CreateExperimentForm({
       <div className="grid grid-cols-2 gap-4">
         <fieldset className="rounded border border-gray-200 p-3 space-y-2">
           <legend className="text-xs font-medium text-gray-500 px-1">Variant A</legend>
-          <input type="text" placeholder="Key" value={variantA.key} onChange={(e) => setVariantA({ ...variantA, key: e.target.value })} className="w-full rounded-md border-gray-300 shadow-sm sm:text-sm" />
-          <input type="text" placeholder="Value" value={variantA.value} onChange={(e) => setVariantA({ ...variantA, value: e.target.value })} className="w-full rounded-md border-gray-300 shadow-sm sm:text-sm font-mono" />
+          <input
+            type="text"
+            placeholder="Key"
+            value={variantA.key}
+            onChange={(e) => setVariantA({ ...variantA, key: e.target.value })}
+            className="w-full rounded-md border-gray-300 shadow-sm sm:text-sm"
+          />
+          <input
+            type="text"
+            placeholder="Value"
+            value={variantA.value}
+            onChange={(e) => setVariantA({ ...variantA, value: e.target.value })}
+            className="w-full rounded-md border-gray-300 shadow-sm sm:text-sm font-mono"
+          />
           <label className="flex items-center gap-2 text-xs text-gray-500">
             Weight
-            <input type="number" min={1} max={99} value={variantA.weight} onChange={(e) => { const w = Number(e.target.value); setVariantA({ ...variantA, weight: w }); setVariantB({ ...variantB, weight: 100 - w }); }} className="w-16 rounded-md border-gray-300 shadow-sm sm:text-sm" />
+            <input
+              type="number"
+              min={1}
+              max={99}
+              value={variantA.weight}
+              onChange={(e) => {
+                const w = Number(e.target.value);
+                setVariantA({ ...variantA, weight: w });
+                setVariantB({ ...variantB, weight: 100 - w });
+              }}
+              className="w-16 rounded-md border-gray-300 shadow-sm sm:text-sm"
+            />
             %
           </label>
         </fieldset>
         <fieldset className="rounded border border-gray-200 p-3 space-y-2">
           <legend className="text-xs font-medium text-gray-500 px-1">Variant B</legend>
-          <input type="text" placeholder="Key" value={variantB.key} onChange={(e) => setVariantB({ ...variantB, key: e.target.value })} className="w-full rounded-md border-gray-300 shadow-sm sm:text-sm" />
-          <input type="text" placeholder="Value" value={variantB.value} onChange={(e) => setVariantB({ ...variantB, value: e.target.value })} className="w-full rounded-md border-gray-300 shadow-sm sm:text-sm font-mono" />
+          <input
+            type="text"
+            placeholder="Key"
+            value={variantB.key}
+            onChange={(e) => setVariantB({ ...variantB, key: e.target.value })}
+            className="w-full rounded-md border-gray-300 shadow-sm sm:text-sm"
+          />
+          <input
+            type="text"
+            placeholder="Value"
+            value={variantB.value}
+            onChange={(e) => setVariantB({ ...variantB, value: e.target.value })}
+            className="w-full rounded-md border-gray-300 shadow-sm sm:text-sm font-mono"
+          />
           <label className="flex items-center gap-2 text-xs text-gray-500">
             Weight
-            <input type="number" min={1} max={99} value={variantB.weight} readOnly className="w-16 rounded-md border-gray-300 shadow-sm sm:text-sm bg-gray-50" />
+            <input
+              type="number"
+              min={1}
+              max={99}
+              value={variantB.weight}
+              readOnly
+              className="w-16 rounded-md border-gray-300 shadow-sm sm:text-sm bg-gray-50"
+            />
             %
           </label>
         </fieldset>
       </div>
 
       <div className="flex gap-2">
-        <button type="submit" disabled={submitting} className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50"
+        >
           {submitting ? 'Creating...' : 'Create'}
         </button>
-        <button type="button" onClick={onCancel} className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
           Cancel
         </button>
       </div>

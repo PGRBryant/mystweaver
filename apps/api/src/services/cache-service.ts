@@ -7,10 +7,7 @@ function cacheKey(projectId: string, flagKey: string): string {
   return `flag:${projectId}:${flagKey}`;
 }
 
-export async function getCachedFlag(
-  projectId: string,
-  key: string,
-): Promise<FlagDocument | null> {
+export async function getCachedFlag(projectId: string, key: string): Promise<FlagDocument | null> {
   const redis = getRedis();
 
   // Try cache first.
@@ -35,12 +32,7 @@ export async function getCachedFlag(
   // Backfill cache.
   if (redis) {
     try {
-      await redis.set(
-        cacheKey(projectId, key),
-        JSON.stringify(flag),
-        'EX',
-        config.cacheTtlSeconds,
-      );
+      await redis.set(cacheKey(projectId, key), JSON.stringify(flag), 'EX', config.cacheTtlSeconds);
     } catch {
       // Cache write failed — non-fatal.
     }

@@ -80,10 +80,7 @@ export async function createFlag(
   return result;
 }
 
-export async function getFlag(
-  projectId: string,
-  key: string,
-): Promise<FlagDocument | null> {
+export async function getFlag(projectId: string, key: string): Promise<FlagDocument | null> {
   const doc = await flagsCollection(projectId).doc(key).get();
   if (!doc.exists) return null;
   const data = doc.data() as FlagDocument;

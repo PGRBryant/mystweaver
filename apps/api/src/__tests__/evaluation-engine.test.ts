@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  evaluateFlag,
-  rolloutHash,
-  matchesCondition,
-} from '../services/evaluation-engine';
+import { evaluateFlag, rolloutHash, matchesCondition } from '../services/evaluation-engine';
 import type { FlagDocument, UserContext, Condition } from '../types/flag';
 import type { Timestamp } from '@google-cloud/firestore';
 
@@ -214,7 +210,9 @@ describe('operators', () => {
   });
 
   it('in', () => {
-    expect(testCond({ attribute: 'country', operator: 'in', value: ['US', 'CA', 'UK'] })).toBe(true);
+    expect(testCond({ attribute: 'country', operator: 'in', value: ['US', 'CA', 'UK'] })).toBe(
+      true,
+    );
     expect(testCond({ attribute: 'country', operator: 'in', value: ['CA', 'UK'] })).toBe(false);
   });
 
@@ -241,7 +239,9 @@ describe('percentage rollout', () => {
       rules: [makeRule({ conditions: [], rolloutPercentage: 0, value: true })],
     });
     for (let i = 0; i < 100; i++) {
-      expect(evaluateFlag(flag, 'test-flag', { id: `user-${i}`, attributes: {} }).value).toBe(false);
+      expect(evaluateFlag(flag, 'test-flag', { id: `user-${i}`, attributes: {} }).value).toBe(
+        false,
+      );
     }
   });
 
@@ -279,7 +279,9 @@ describe('percentage rollout', () => {
     let trueCount = 0;
     const total = 10000;
     for (let i = 0; i < total; i++) {
-      if (evaluateFlag(flag, 'distribution-test', { id: `user-${i}`, attributes: {} }).value === true) {
+      if (
+        evaluateFlag(flag, 'distribution-test', { id: `user-${i}`, attributes: {} }).value === true
+      ) {
         trueCount++;
       }
     }
@@ -375,7 +377,9 @@ describe('Room 404 targeting scenarios', () => {
     const normal: UserContext = { id: 'plr_2', attributes: { skillTier: 'normal' } };
 
     expect(evaluateFlag(flag, 'game.task-timer-seconds', struggling).value).toBe(12);
-    expect(evaluateFlag(flag, 'game.task-timer-seconds', struggling).reason).toBe('rule:skill-tier-struggling');
+    expect(evaluateFlag(flag, 'game.task-timer-seconds', struggling).reason).toBe(
+      'rule:skill-tier-struggling',
+    );
     expect(evaluateFlag(flag, 'game.task-timer-seconds', normal).value).toBe(8);
     expect(evaluateFlag(flag, 'game.task-timer-seconds', normal).reason).toBe('default');
   });

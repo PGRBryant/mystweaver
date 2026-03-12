@@ -36,9 +36,7 @@ export function FlagListPage() {
     }
 
     if (statusFilter !== 'all') {
-      result = result.filter((f) =>
-        statusFilter === 'enabled' ? f.enabled : !f.enabled,
-      );
+      result = result.filter((f) => (statusFilter === 'enabled' ? f.enabled : !f.enabled));
     }
 
     if (typeFilter !== 'all') {
@@ -114,7 +112,9 @@ export function FlagListPage() {
             >
               <option value="">All tags</option>
               {allTags.map((t) => (
-                <option key={t} value={t}>{t}</option>
+                <option key={t} value={t}>
+                  {t}
+                </option>
               ))}
             </select>
           )}
@@ -129,9 +129,7 @@ export function FlagListPage() {
           onAction={() => navigate('/flags/new')}
         />
       ) : filtered.length === 0 ? (
-        <p className="text-sm text-gray-500 py-8 text-center">
-          No flags match your filters.
-        </p>
+        <p className="text-sm text-gray-500 py-8 text-center">No flags match your filters.</p>
       ) : (
         <FlagTable flags={filtered} onToggle={refetch} />
       )}

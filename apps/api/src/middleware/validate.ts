@@ -16,7 +16,8 @@ function normalizeSpec(spec: FieldSpec | FieldType): FieldSpec {
 
 function checkType(value: unknown, type: FieldType): boolean {
   if (type === 'array') return Array.isArray(value);
-  if (type === 'object') return typeof value === 'object' && value !== null && !Array.isArray(value);
+  if (type === 'object')
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
   return typeof value === type;
 }
 

@@ -15,13 +15,13 @@ A production-ready alternative to LaunchDarkly, built for teams that want full c
 
 ## Development Status
 
-| Phase | Description | Status |
-|-------|-------------|--------|
-| **Phase 1** | Foundation — SDK key management, flag CRUD, evaluation engine, SSE streaming, event ingestion | **Complete** |
-| **Phase 2** | Admin Interface — authentication, flag management UI, audit log | **Complete** |
-| **Phase 3** | Experimentation — A/B testing, statistical results engine, live results UI | **Complete** |
-| **Phase 4** | SDK Package — `@mystweaver/sdk-js` for JS/TS (browser + Node) | **Complete** |
-| **Phase 5** | Production Readiness — Terraform, CI/CD, observability, security hardening | Partial (infra exists) |
+| Phase       | Description                                                                                   | Status                 |
+| ----------- | --------------------------------------------------------------------------------------------- | ---------------------- |
+| **Phase 1** | Foundation — SDK key management, flag CRUD, evaluation engine, SSE streaming, event ingestion | **Complete**           |
+| **Phase 2** | Admin Interface — authentication, flag management UI, audit log                               | **Complete**           |
+| **Phase 3** | Experimentation — A/B testing, statistical results engine, live results UI                    | **Complete**           |
+| **Phase 4** | SDK Package — `@mystweaver/sdk-js` for JS/TS (browser + Node)                                 | **Complete**           |
+| **Phase 5** | Production Readiness — Terraform, CI/CD, observability, security hardening                    | Partial (infra exists) |
 
 See [ROADMAP.md](ROADMAP.md) for the full engineering roadmap with milestones, dependency graph, and definition of done for each item.
 
@@ -31,38 +31,38 @@ See [ROADMAP.md](ROADMAP.md) for the full engineering roadmap with milestones, d
 
 **Admin routes** (authenticated via Google IAP in production, dev bypass locally):
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/flags` | Create a flag |
-| `GET` | `/api/flags` | List all flags |
-| `GET` | `/api/flags/:key` | Get a single flag |
-| `PUT` | `/api/flags/:key` | Full update |
-| `PATCH` | `/api/flags/:key` | Partial update (toggle, rename, etc.) |
-| `DELETE` | `/api/flags/:key` | Soft delete |
-| `POST` | `/api/sdk-keys` | Create an SDK key |
-| `GET` | `/api/sdk-keys` | List SDK keys (metadata only) |
-| `DELETE` | `/api/sdk-keys/:id` | Revoke an SDK key |
-| `GET` | `/api/audit` | Query audit log (filter by flag, action, user) |
-| `GET` | `/api/audit/export` | Export audit log as CSV |
-| `POST` | `/api/experiments` | Create an experiment |
-| `GET` | `/api/experiments` | List experiments |
-| `GET` | `/api/experiments/:id` | Get experiment detail |
-| `PATCH` | `/api/experiments/:id` | Update a draft experiment |
-| `DELETE` | `/api/experiments/:id` | Delete a draft experiment |
-| `POST` | `/api/experiments/:id/start` | Start experiment (modifies flag rules) |
-| `POST` | `/api/experiments/:id/stop` | Stop experiment (reverts flag) |
-| `POST` | `/api/experiments/:id/conclude` | Declare winner (promotes variant value) |
-| `GET` | `/api/experiments/:id/results` | Compute statistical results |
-| `GET` | `/api/auth/me` | Get current user email |
+| Method   | Endpoint                        | Description                                    |
+| -------- | ------------------------------- | ---------------------------------------------- |
+| `POST`   | `/api/flags`                    | Create a flag                                  |
+| `GET`    | `/api/flags`                    | List all flags                                 |
+| `GET`    | `/api/flags/:key`               | Get a single flag                              |
+| `PUT`    | `/api/flags/:key`               | Full update                                    |
+| `PATCH`  | `/api/flags/:key`               | Partial update (toggle, rename, etc.)          |
+| `DELETE` | `/api/flags/:key`               | Soft delete                                    |
+| `POST`   | `/api/sdk-keys`                 | Create an SDK key                              |
+| `GET`    | `/api/sdk-keys`                 | List SDK keys (metadata only)                  |
+| `DELETE` | `/api/sdk-keys/:id`             | Revoke an SDK key                              |
+| `GET`    | `/api/audit`                    | Query audit log (filter by flag, action, user) |
+| `GET`    | `/api/audit/export`             | Export audit log as CSV                        |
+| `POST`   | `/api/experiments`              | Create an experiment                           |
+| `GET`    | `/api/experiments`              | List experiments                               |
+| `GET`    | `/api/experiments/:id`          | Get experiment detail                          |
+| `PATCH`  | `/api/experiments/:id`          | Update a draft experiment                      |
+| `DELETE` | `/api/experiments/:id`          | Delete a draft experiment                      |
+| `POST`   | `/api/experiments/:id/start`    | Start experiment (modifies flag rules)         |
+| `POST`   | `/api/experiments/:id/stop`     | Stop experiment (reverts flag)                 |
+| `POST`   | `/api/experiments/:id/conclude` | Declare winner (promotes variant value)        |
+| `GET`    | `/api/experiments/:id/results`  | Compute statistical results                    |
+| `GET`    | `/api/auth/me`                  | Get current user email                         |
 
 **SDK routes** (authenticated via `Authorization: Bearer <sdk-key>`):
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/sdk/evaluate` | Evaluate a single flag |
-| `POST` | `/sdk/evaluate/bulk` | Evaluate up to 50 flags |
-| `GET` | `/sdk/stream` | SSE stream of real-time flag updates |
-| `POST` | `/sdk/events` | Ingest evaluation and metric events |
+| Method | Endpoint             | Description                          |
+| ------ | -------------------- | ------------------------------------ |
+| `POST` | `/sdk/evaluate`      | Evaluate a single flag               |
+| `POST` | `/sdk/evaluate/bulk` | Evaluate up to 50 flags              |
+| `GET`  | `/sdk/stream`        | SSE stream of real-time flag updates |
+| `POST` | `/sdk/events`        | Ingest evaluation and metric events  |
 
 ### Admin UI
 
@@ -96,9 +96,9 @@ import { MystweaverClient } from '@mystweaver/sdk-js';
 const client = new MystweaverClient({
   apiKey: 'mw_sdk_live_...',
   baseUrl: 'https://api.mystweaver.dev',
-  defaults: { 'game.task-timer-seconds': 8 },  // fallbacks when API is down
-  streaming: true,                               // enable real-time SSE updates
-  flushInterval: 5000,                           // event batch flush interval (ms)
+  defaults: { 'game.task-timer-seconds': 8 }, // fallbacks when API is down
+  streaming: true, // enable real-time SSE updates
+  flushInterval: 5000, // event batch flush interval (ms)
 });
 
 // Evaluate flags
@@ -111,7 +111,9 @@ const all = await client.evaluateAll(['flag-a', 'flag-b'], { id: 'user-123' });
 client.track('room.completed', 'user-123', { floor: 7, roomType: 'leak' });
 
 // Real-time flag changes
-client.onFlagChange('game.task-timer-seconds', (newVal, prev) => { /* ... */ });
+client.onFlagChange('game.task-timer-seconds', (newVal, prev) => {
+  /* ... */
+});
 
 // Cleanup
 await client.flush();
@@ -135,19 +137,19 @@ expect(client.trackedEvents).toHaveLength(0);
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | React 18 + TypeScript + Vite + Tailwind CSS |
-| **SDK** | `@mystweaver/sdk-js` — zero-dependency JS/TS client (ESM + CJS) |
-| **Backend** | Node.js + Express + TypeScript |
-| **Database** | Google Cloud Firestore |
-| **Cache** | Cloud Memorystore (Redis 7) |
-| **Streaming** | Server-Sent Events (SSE) |
-| **Auth** | Google IAP (production), dev bypass (local) |
-| **Eventing** | Cloud Pub/Sub |
-| **Hosting** | Cloud Run |
-| **IaC** | Terraform |
-| **CI/CD** | GitHub Actions + Workload Identity Federation |
+| Layer         | Technology                                                      |
+| ------------- | --------------------------------------------------------------- |
+| **Frontend**  | React 18 + TypeScript + Vite + Tailwind CSS                     |
+| **SDK**       | `@mystweaver/sdk-js` — zero-dependency JS/TS client (ESM + CJS) |
+| **Backend**   | Node.js + Express + TypeScript                                  |
+| **Database**  | Google Cloud Firestore                                          |
+| **Cache**     | Cloud Memorystore (Redis 7)                                     |
+| **Streaming** | Server-Sent Events (SSE)                                        |
+| **Auth**      | Google IAP (production), dev bypass (local)                     |
+| **Eventing**  | Cloud Pub/Sub                                                   |
+| **Hosting**   | Cloud Run                                                       |
+| **IaC**       | Terraform                                                       |
+| **CI/CD**     | GitHub Actions + Workload Identity Federation                   |
 
 ## Quick Start
 
@@ -204,11 +206,11 @@ npx tsx scripts/test-sdk.ts <your-sdk-key>
 
 [Room 404](https://github.com/PGRBRyant/room-404) is a multiplayer browser game that uses Mystweaver as its feature flag and experimentation backend. This integration drives roadmap priorities.
 
-| Milestone | Room 404 Capability | Requirement |
-|-----------|---------------------|-------------|
-| **Can start building** | SDK calls against local Mystweaver | Phase 1 (done) |
-| **Can run integration tests** | Automated tests with mock + real SDK | Phase 4 (done) |
-| **Live demo ready** | Full demo with admin UI + experiments | All phases |
+| Milestone                     | Room 404 Capability                   | Requirement    |
+| ----------------------------- | ------------------------------------- | -------------- |
+| **Can start building**        | SDK calls against local Mystweaver    | Phase 1 (done) |
+| **Can run integration tests** | Automated tests with mock + real SDK  | Phase 4 (done) |
+| **Live demo ready**           | Full demo with admin UI + experiments | All phases     |
 
 The seed script populates all 24 Room 404 flags covering rooms, powerups, game mechanics, AI behavior, and item tier weights. See [ROADMAP.md](ROADMAP.md#room-404-integration-contract) for the full flag contract.
 

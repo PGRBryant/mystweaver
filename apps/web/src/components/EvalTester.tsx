@@ -56,9 +56,7 @@ export function EvalTester({ flagKey }: EvalTesterProps) {
           <span className="font-mono text-green-700">{JSON.stringify(result.value)}</span>
         </div>
       )}
-      {error && (
-        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
-      )}
+      {error && <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>}
     </div>
   );
 }

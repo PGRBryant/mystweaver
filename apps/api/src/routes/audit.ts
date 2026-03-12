@@ -54,9 +54,10 @@ router.get('/export', async (req, res, next) => {
     // CSV header
     res.write('id,action,flagKey,performedBy,performedAt\n');
     for (const r of records) {
-      const at = r.performedAt && 'toDate' in r.performedAt
-        ? (r.performedAt as unknown as { toDate: () => Date }).toDate().toISOString()
-        : '';
+      const at =
+        r.performedAt && 'toDate' in r.performedAt
+          ? (r.performedAt as unknown as { toDate: () => Date }).toDate().toISOString()
+          : '';
       res.write(`${r.id},${r.action},${r.flagKey ?? ''},${r.performedBy},${at}\n`);
     }
     res.end();

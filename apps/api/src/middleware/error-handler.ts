@@ -10,12 +10,7 @@ export class AppError extends Error {
   }
 }
 
-export function errorHandler(
-  err: Error,
-  _req: Request,
-  res: Response,
-  _next: NextFunction,
-): void {
+export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction): void {
   const statusCode = err instanceof AppError ? err.statusCode : 500;
 
   if (statusCode >= 500) {

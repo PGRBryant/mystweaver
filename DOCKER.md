@@ -19,17 +19,20 @@ docker-compose down -v
 ## Services
 
 ### Firestore Emulator
+
 - **Port**: 8080
 - **Connection**: `FIRESTORE_EMULATOR_HOST=localhost:8080`
 - **Project ID**: `mystweaver-local`
 - **Note**: Uses `cloud-sdk:emulators` which provides the bare gRPC/REST emulator. There is no web UI — use the Firestore client SDK or REST API to interact with it directly.
 
 ### Redis
+
 - **Port**: 6379
 - **Host**: `localhost` (from host), `redis` (from Docker)
 - **CLI**: `docker-compose exec redis redis-cli`
 
 ### API Server
+
 - **Port**: 3000
 - **URL**: http://localhost:3000
 - **Environment**: See `docker-compose.yml`
@@ -114,6 +117,7 @@ docker-compose build --no-cache
 - **Redis**: Persisted in the `redis-data` volume (append-only log enabled)
 
 To reset Redis data:
+
 ```bash
 docker-compose down -v
 docker-compose up -d
@@ -123,10 +127,10 @@ docker-compose up -d
 
 See the `environment` section in `docker-compose.yml` for all available options:
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `NODE_ENV` | Environment mode | `development` |
-| `PORT` | Server port | `3000` |
+| Variable                  | Description        | Example          |
+| ------------------------- | ------------------ | ---------------- |
+| `NODE_ENV`                | Environment mode   | `development`    |
+| `PORT`                    | Server port        | `3000`           |
 | `FIRESTORE_EMULATOR_HOST` | Firestore emulator | `localhost:8080` |
-| `REDIS_HOST` | Redis hostname | `redis` |
-| `REDIS_PORT` | Redis port | `6379` |
+| `REDIS_HOST`              | Redis hostname     | `redis`          |
+| `REDIS_PORT`              | Redis port         | `6379`           |

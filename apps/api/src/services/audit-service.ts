@@ -45,8 +45,7 @@ export interface ListAuditParams {
  * List audit records with optional filters. Returns newest first.
  */
 export async function listAuditRecords(params: ListAuditParams): Promise<AuditRecord[]> {
-  let query = auditCollection(params.projectId)
-    .orderBy('performedAt', 'desc') as Query;
+  let query = auditCollection(params.projectId).orderBy('performedAt', 'desc') as Query;
 
   if (params.flagKey) {
     query = query.where('flagKey', '==', params.flagKey);
@@ -63,9 +62,9 @@ export async function listAuditRecords(params: ListAuditParams): Promise<AuditRe
     // Firestore doesn't have native offset — use limit+startAfter in future.
     // For now, fetch extra and slice.
     const snapshot = await query.limit(limit + (params.offset ?? 0)).get();
-    return snapshot.docs.slice(params.offset).map(
-      (doc) => ({ id: doc.id, ...doc.data() }) as AuditRecord,
-    );
+    return snapshot.docs
+      .slice(params.offset)
+      .map((doc) => ({ id: doc.id, ...doc.data() }) as AuditRecord);
   }
 
   const snapshot = await query.limit(limit).get();

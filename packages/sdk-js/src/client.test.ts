@@ -177,8 +177,8 @@ describe('MystweaverClient', () => {
       await client.flush();
 
       // The flush call should POST to /sdk/events
-      const eventsCalls = fetchMock.mock.calls.filter(
-        (c: [string]) => c[0].includes('/sdk/events'),
+      const eventsCalls = fetchMock.mock.calls.filter((c: [string]) =>
+        c[0].includes('/sdk/events'),
       );
       expect(eventsCalls).toHaveLength(1);
 
@@ -253,8 +253,8 @@ describe('MystweaverClient', () => {
       client.track('room.completed', 'user-1');
       await client.close();
 
-      const eventsCalls = fetchMock.mock.calls.filter(
-        (c: [string]) => c[0].includes('/sdk/events'),
+      const eventsCalls = fetchMock.mock.calls.filter((c: [string]) =>
+        c[0].includes('/sdk/events'),
       );
       expect(eventsCalls).toHaveLength(1);
     });

@@ -28,9 +28,7 @@ export async function publishFlagChange(
 export async function startSubscription(): Promise<void> {
   try {
     const subName = config.pubsubSubscription;
-    const [sub] = await pubsub
-      .subscription(subName)
-      .get({ autoCreate: true });
+    const [sub] = await pubsub.subscription(subName).get({ autoCreate: true });
 
     subscription = sub;
 

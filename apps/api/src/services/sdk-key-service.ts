@@ -78,10 +78,7 @@ export async function revokeSDKKey(keyId: string): Promise<void> {
 export async function validateSDKKey(rawKey: string): Promise<string | null> {
   const hashed = hashKey(rawKey);
 
-  const snapshot = await sdkKeysCollection
-    .where('hashedKey', '==', hashed)
-    .limit(1)
-    .get();
+  const snapshot = await sdkKeysCollection.where('hashedKey', '==', hashed).limit(1).get();
 
   if (snapshot.empty) return null;
 
@@ -91,9 +88,12 @@ export async function validateSDKKey(rawKey: string): Promise<string | null> {
   if (doc.revokedAt) return null;
 
   // Update lastUsedAt (fire-and-forget).
-  sdkKeysCollection.doc(doc.id).update({
-    lastUsedAt: FieldValue.serverTimestamp(),
-  }).catch(() => {});
+  sdkKeysCollection
+    .doc(doc.id)
+    .update({
+      lastUsedAt: FieldValue.serverTimestamp(),
+    })
+    .catch(() => {});
 
   return doc.projectId;
 }

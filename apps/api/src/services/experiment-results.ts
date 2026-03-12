@@ -171,8 +171,7 @@ export async function computeResults(
     if (metrics.length > 0) {
       mean = metrics.reduce((s, x) => s + x, 0) / metrics.length;
       if (metrics.length > 1) {
-        const variance =
-          metrics.reduce((s, x) => s + (x - mean) ** 2, 0) / (metrics.length - 1);
+        const variance = metrics.reduce((s, x) => s + (x - mean) ** 2, 0) / (metrics.length - 1);
         stdDev = Math.sqrt(variance);
       }
     }
@@ -190,10 +189,10 @@ export async function computeResults(
       pValue = welchTTest(
         a.sampleSize,
         a.conversionRate,
-        a.sampleSize > 0 ? (a.conversionRate * (1 - a.conversionRate)) : 0,
+        a.sampleSize > 0 ? a.conversionRate * (1 - a.conversionRate) : 0,
         b.sampleSize,
         b.conversionRate,
-        b.sampleSize > 0 ? (b.conversionRate * (1 - b.conversionRate)) : 0,
+        b.sampleSize > 0 ? b.conversionRate * (1 - b.conversionRate) : 0,
       );
     }
   }

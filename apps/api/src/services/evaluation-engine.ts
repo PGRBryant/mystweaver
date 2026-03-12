@@ -12,16 +12,11 @@ import type {
  * SHA-256 of "flagKey:userId", first 8 hex chars → int mod 100 → 0–99.
  */
 function rolloutHash(flagKey: string, userId: string): number {
-  const digest = createHash('sha256')
-    .update(`${flagKey}:${userId}`)
-    .digest('hex');
+  const digest = createHash('sha256').update(`${flagKey}:${userId}`).digest('hex');
   return parseInt(digest.substring(0, 8), 16) % 100;
 }
 
-function matchesCondition(
-  context: UserContext,
-  condition: Condition,
-): boolean {
+function matchesCondition(context: UserContext, condition: Condition): boolean {
   const raw = context.attributes[condition.attribute];
   if (raw === undefined || raw === null) return false;
 
@@ -49,11 +44,7 @@ function matchesCondition(
   }
 }
 
-function ruleMatches(
-  rule: TargetingRule,
-  flag: FlagDocument,
-  context: UserContext,
-): boolean {
+function ruleMatches(rule: TargetingRule, flag: FlagDocument, context: UserContext): boolean {
   // All conditions must match (AND logic).
   if (!rule.conditions.every((c) => matchesCondition(context, c))) {
     return false;

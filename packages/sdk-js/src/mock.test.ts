@@ -9,7 +9,7 @@ describe('MystweaverMockClient', () => {
 
   describe('flag()', () => {
     it('returns the boolean value from flags map', async () => {
-      const client = new MystweaverMockClient({ flags: { 'f1': true, 'f2': false } });
+      const client = new MystweaverMockClient({ flags: { f1: true, f2: false } });
       expect(await client.flag('f1', CTX)).toBe(true);
       expect(await client.flag('f2', CTX)).toBe(false);
     });

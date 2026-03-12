@@ -17,7 +17,7 @@ Describe what documentation is missing or unclear.
 - [ ] API Documentation
 - [ ] SDK Documentation
 - [ ] Deployment Guide
-- [ ] Other: _________
+- [ ] Other: \***\*\_\*\***
 
 ## Suggested Content
 

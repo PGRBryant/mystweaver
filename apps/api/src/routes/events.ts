@@ -8,26 +8,21 @@ const router = Router();
 const MAX_EVENTS = 100;
 
 // POST /sdk/events — ingest evaluation and metric events
-router.post(
-  '/',
-  sdkAuth,
-  validateBody({ events: 'array' }),
-  (req, res) => {
-    const projectId = req.sdkProjectId!;
-    const { events } = req.body as EventIngestionRequest;
+router.post('/', sdkAuth, validateBody({ events: 'array' }), (req, res) => {
+  const projectId = req.sdkProjectId!;
+  const { events } = req.body as EventIngestionRequest;
 
-    const accepted = Math.min(events.length, MAX_EVENTS);
-    const dropped = Math.max(events.length - MAX_EVENTS, 0);
-    const toWrite = events.slice(0, MAX_EVENTS);
+  const accepted = Math.min(events.length, MAX_EVENTS);
+  const dropped = Math.max(events.length - MAX_EVENTS, 0);
+  const toWrite = events.slice(0, MAX_EVENTS);
 
-    // Fire-and-forget: write to Firestore async, respond immediately.
-    writeEvents(projectId, toWrite).catch((err) => {
-      console.error('[events] async write failed:', err);
-    });
+  // Fire-and-forget: write to Firestore async, respond immediately.
+  writeEvents(projectId, toWrite).catch((err) => {
+    console.error('[events] async write failed:', err);
+  });
 
-    res.json({ accepted, dropped });
-  },
-);
+  res.json({ accepted, dropped });
+});
 
 async function writeEvents(projectId: string, events: SDKEvent[]): Promise<void> {
   const col = eventsCollection(projectId);

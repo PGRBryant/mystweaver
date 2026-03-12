@@ -44,9 +44,7 @@ export function AuditTrail({ flagKey }: AuditTrailProps) {
 
   return (
     <div className="space-y-2">
-      <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-        Recent changes
-      </h4>
+      <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide">Recent changes</h4>
       <ul className="space-y-1.5">
         {records.map((r) => (
           <li key={r.id} className="text-xs text-gray-600 border-l-2 border-gray-200 pl-3 py-1">

@@ -1,10 +1,6 @@
 import type { Flag, CreateFlagData, UpdateFlagData, EvaluateResult } from '@/types/flag';
 import type { AuditRecord } from '@/types/audit';
-import type {
-  Experiment,
-  ExperimentResults,
-  ExperimentVariant,
-} from '@/types/experiment';
+import type { Experiment, ExperimentResults, ExperimentVariant } from '@/types/experiment';
 
 const BASE = '/api';
 
@@ -167,9 +163,7 @@ export function concludeExperiment(id: string, winner: string): Promise<Experime
 }
 
 export function fetchExperimentResults(id: string): Promise<ExperimentResults> {
-  return request<ExperimentResults>(
-    withProject(`/experiments/${encodeURIComponent(id)}/results`),
-  );
+  return request<ExperimentResults>(withProject(`/experiments/${encodeURIComponent(id)}/results`));
 }
 
 // ── Auth ─────────────────────────────────────────────────────────────────

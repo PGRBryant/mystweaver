@@ -1,9 +1,4 @@
-import type {
-  UserContext,
-  FlagChangeListener,
-  SSEEvent,
-  TrackEvent,
-} from './types';
+import type { UserContext, FlagChangeListener, SSEEvent, TrackEvent } from './types';
 
 export interface MockClientConfig {
   /** Initial flag values. */
@@ -57,10 +52,7 @@ export class MystweaverMockClient {
     return defaultValue;
   }
 
-  async evaluateAll(
-    flagKeys: string[],
-    _context: UserContext,
-  ): Promise<Record<string, unknown>> {
+  async evaluateAll(flagKeys: string[], _context: UserContext): Promise<Record<string, unknown>> {
     const out: Record<string, unknown> = {};
     for (const key of flagKeys) {
       out[key] = this.flags[key] ?? null;

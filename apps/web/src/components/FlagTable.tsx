@@ -21,17 +21,11 @@ export function FlagTable({ flags, onToggle }: FlagTableProps) {
       <table className="min-w-full divide-y divide-gray-300">
         <thead className="bg-gray-50">
           <tr>
-            <th className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">
-              Name
-            </th>
+            <th className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">Name</th>
             <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Key</th>
             <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Type</th>
-            <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-              Enabled
-            </th>
-            <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-              Updated
-            </th>
+            <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Enabled</th>
+            <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Updated</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200 bg-white">
