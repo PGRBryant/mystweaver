@@ -1,5 +1,5 @@
 {
-  "name": "@labrats/api",
+  "name": "@mystweaver/api",
   "version": "0.1.0",
   "private": true,
   "description": "Feature flag service API server",

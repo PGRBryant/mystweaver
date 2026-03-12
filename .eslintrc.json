@@ -2,12 +2,12 @@
   "root": true,
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
-    "ecmaVersion": 2020,
+    "ecmaVersion": 2022,
     "sourceType": "module"
   },
   "env": {
     "node": true,
-    "es2020": true
+    "es2022": true
   },
   "extends": [
     "eslint:recommended",
@@ -15,19 +15,11 @@
   ],
   "plugins": ["@typescript-eslint"],
   "rules": {
-    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "no-console": ["warn", { "allow": ["log", "warn", "error"] }],
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
     "@typescript-eslint/no-explicit-any": "warn",
     "eqeqeq": ["error", "always"],
     "prefer-const": "error"
-  },
-  "overrides": [
-    {
-      "files": ["**/*.test.ts", "**/*.test.tsx"],
-      "env": {
-        "jest": true
-      }
-    }
-  ]
+  }
 }

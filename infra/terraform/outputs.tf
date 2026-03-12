@@ -1,6 +1,6 @@
 output "artifact_registry_url" {
   description = "Docker registry URL for pushing/pulling images"
-  value       = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.labrats.repository_id}"
+  value       = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.mystweaver.repository_id}"
 }
 
 output "workload_identity_provider" {
@@ -16,4 +16,14 @@ output "github_actions_service_account" {
 output "api_service_account" {
   description = "Service account email for the Cloud Run API service"
   value       = google_service_account.api.email
+}
+
+output "cloud_run_url" {
+  description = "Public URL of the deployed Cloud Run API service"
+  value       = google_cloud_run_v2_service.api.uri
+}
+
+output "redis_host" {
+  description = "Internal IP of the Redis instance (accessible via VPC connector)"
+  value       = google_redis_instance.cache.host
 }

@@ -1,6 +1,6 @@
 # Initializing the GitHub Repository
 
-This guide walks you through setting up the Labrats GitHub repository from scratch and connecting it to your GCP project.
+This guide walks you through setting up the Mystweaver GitHub repository from scratch and connecting it to your GCP project.
 
 ## Table of Contents
 
@@ -17,7 +17,7 @@ This guide walks you through setting up the Labrats GitHub repository from scrat
 ### Step 1: Initialize Git Repository Locally
 
 ```bash
-cd ~/Code/labrats
+cd ~/Code/mystweaver
 
 # Initialize git
 git init
@@ -55,18 +55,18 @@ git config --list
 
 1. Go to [github.com/new](https://github.com/new)
 2. Fill in details:
-   - **Repository name**: `labrats`
+   - **Repository name**: `mystweaver`
    - **Description**: "An open-source, self-hosted feature flag service"
    - **Visibility**: Public (for open-source)
    - **Initialize**: Leave unchecked (we have local commits)
 3. Click "Create Repository"
-4. Copy the repository URL (e.g., `https://github.com/yourusername/labrats.git`)
+4. Copy the repository URL (e.g., `https://github.com/yourusername/mystweaver.git`)
 
 ### Option B: GitHub CLI
 
 ```bash
 # If you have GitHub CLI installed
-gh repo create labrats \
+gh repo create mystweaver \
   --public \
   --source=. \
   --remote=origin \
@@ -82,7 +82,7 @@ gh repo create labrats \
 
 ```bash
 # Replace with your actual repository URL
-git remote add origin https://github.com/yourusername/labrats.git
+git remote add origin https://github.com/yourusername/mystweaver.git
 
 # Verify remote
 git remote -v
@@ -108,7 +108,7 @@ git branch -vv
 
 ### Step 4: Verify Repository
 
-Visit: `https://github.com/yourusername/labrats`
+Visit: `https://github.com/yourusername/mystweaver`
 
 You should see:
 - All project files
@@ -292,7 +292,7 @@ git push -u origin main
 git remote -v
 
 # Update remote URL
-git remote set-url origin https://github.com/yourusername/labrats.git
+git remote set-url origin https://github.com/yourusername/mystweaver.git
 ```
 
 ### Forgot to Configure User

@@ -9,10 +9,10 @@ terraform {
   }
 
   # Uncomment and configure after bootstrapping GCS bucket for state:
-  # backend "gcs" {
-  #   bucket = "your-project-id-tfstate"
-  #   prefix = "labrats/state"
-  # }
+   backend "gcs" {
+     bucket = "mystweaver-489920-tfstate"
+     prefix = "mystweaver/state"
+   }
 }
 
 provider "google" {
@@ -37,6 +37,8 @@ resource "google_project_service" "apis" {
     "iam.googleapis.com",
     "iamcredentials.googleapis.com",
     "sts.googleapis.com",
+    "vpcaccess.googleapis.com",
+    "compute.googleapis.com",
   ])
 
   service            = each.key
@@ -45,11 +47,11 @@ resource "google_project_service" "apis" {
 
 # ── Artifact Registry (Docker images) ────────────────────────────────────────
 
-resource "google_artifact_registry_repository" "labrats" {
-  repository_id = "labrats"
+resource "google_artifact_registry_repository" "mystweaver" {
+  repository_id = "mystweaver"
   location      = var.region
   format        = "DOCKER"
-  description   = "Labrats container images"
+  description   = "Mystweaver container images"
 
   depends_on = [google_project_service.apis]
 }
@@ -75,8 +77,8 @@ resource "google_pubsub_topic" "flag_updates" {
 # ── Cloud Run service account ─────────────────────────────────────────────────
 
 resource "google_service_account" "api" {
-  account_id   = "labrats-api"
-  display_name = "Labrats API Runtime"
+  account_id   = "mystweaver-api"
+  display_name = "Mystweaver API Runtime"
   description  = "Service account used by the Cloud Run API service"
 }
 
@@ -126,6 +128,8 @@ resource "google_iam_workload_identity_pool_provider" "github" {
     "attribute.repository_owner" = "assertion.repository_owner"
   }
 
+  attribute_condition = "assertion.repository_owner == \"${var.github_org}\""
+
   oidc {
     issuer_uri = "https://token.actions.githubusercontent.com"
   }
@@ -159,4 +163,116 @@ resource "google_project_iam_member" "github_actions_sa_user" {
   project = var.project_id
   role    = "roles/iam.serviceAccountUser"
   member  = "serviceAccount:${google_service_account.github_actions.email}"
+}
+
+# ── VPC Access Connector (Cloud Run → Redis) ──────────────────────────────────
+
+resource "google_vpc_access_connector" "default" {
+  name          = "mystweaver-connector"
+  region        = var.region
+  ip_cidr_range = "10.8.0.0/28"
+  network       = "default"
+
+  depends_on = [google_project_service.apis]
+}
+
+# ── Cloud Memorystore (Redis) ─────────────────────────────────────────────────
+
+resource "google_redis_instance" "cache" {
+  name           = "mystweaver-cache"
+  tier           = var.redis_tier
+  memory_size_gb = var.redis_memory_size_gb
+  region         = var.region
+  redis_version  = "REDIS_7_0"
+  display_name   = "Mystweaver cache"
+
+  depends_on = [google_project_service.apis]
+}
+
+# ── Cloud Run API service ─────────────────────────────────────────────────────
+# Terraform creates and owns the service configuration (env vars, SA, scaling).
+# The container image is managed by CI/CD (deploy.yml) — Terraform ignores it
+# after initial creation to avoid stepping on in-flight deployments.
+
+resource "google_cloud_run_v2_service" "api" {
+  name     = "mystweaver-api"
+  location = var.region
+
+  template {
+    service_account = google_service_account.api.email
+
+    vpc_access {
+      connector = google_vpc_access_connector.default.id
+      egress    = "PRIVATE_RANGES_ONLY"
+    }
+
+    scaling {
+      min_instance_count = 0
+      max_instance_count = 10
+    }
+
+    containers {
+      # Placeholder on first apply — CI/CD owns image updates thereafter.
+      image = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.mystweaver.repository_id}/api:latest"
+
+      ports {
+        container_port = 3000
+      }
+
+      resources {
+        limits = {
+          cpu    = "1"
+          memory = "512Mi"
+        }
+      }
+
+      env {
+        name  = "NODE_ENV"
+        value = "production"
+      }
+      env {
+        name  = "GCP_PROJECT_ID"
+        value = var.project_id
+      }
+      env {
+        name  = "REDIS_HOST"
+        value = google_redis_instance.cache.host
+      }
+      env {
+        name  = "REDIS_PORT"
+        value = tostring(google_redis_instance.cache.port)
+      }
+
+      startup_probe {
+        http_get {
+          path = "/health"
+          port = 3000
+        }
+        initial_delay_seconds = 5
+        timeout_seconds       = 3
+        period_seconds        = 10
+        failure_threshold     = 3
+      }
+
+      liveness_probe {
+        http_get {
+          path = "/health"
+          port = 3000
+        }
+        period_seconds    = 30
+        failure_threshold = 3
+      }
+    }
+  }
+
+  # CI/CD (deploy.yml) controls image updates — Terraform only manages infra config.
+  lifecycle {
+    ignore_changes = [template[0].containers[0].image]
+  }
+
+  depends_on = [
+    google_project_service.apis,
+    google_redis_instance.cache,
+    google_vpc_access_connector.default,
+  ]
 }

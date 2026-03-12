@@ -1,4 +1,4 @@
-# Labrats
+# Mystweaver
 
 <div align="center">
 
@@ -8,14 +8,14 @@ A production-ready alternative to LaunchDarkly, built for teams that want full c
 
 [Documentation](#documentation) · [Quick Start](#quick-start) · [Contributing](#contributing) · [License](LICENSE)
 
-[![CI](https://github.com/yourusername/labrats/actions/workflows/ci.yml/badge.svg)](https://github.com/yourusername/labrats/actions)
+[![CI](https://github.com/PGRBRyant/mystweaver/actions/workflows/ci.yml/badge.svg)](https://github.com/PGRBRyant/mystweaver/actions)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
 </div>
 
 ## Overview
 
-Labrats is a self-hosted feature flag service designed for development teams who need:
+Mystweaver is a self-hosted feature flag service designed for development teams who need:
 
 - **Full control** over flag data and infrastructure
 - **Production-grade reliability** with caching, Pub/Sub, and distributed tracing
@@ -24,7 +24,7 @@ Labrats is a self-hosted feature flag service designed for development teams who
 - **Google IAP integration** for secure admin UI access
 - **Comprehensive observability** with Cloud Logging and Monitoring
 
-### Why Labrats?
+### Why Mystweaver?
 
 - **Open Source** – No vendor lock-in, community-driven development
 - **Scalable** – Redis caching, Pub/Sub for real-time flag updates, Cloud Trace integration
@@ -58,8 +58,8 @@ Labrats is a self-hosted feature flag service designed for development teams who
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/labrats.git
-cd labrats
+git clone https://github.com/PGRBRyant/mystweaver.git
+cd mystweaver
 
 # Install dependencies
 npm install
@@ -68,10 +68,10 @@ npm install
 docker-compose up -d
 
 # Run the API server
-npm run dev --workspace=@labrats/api
+npm run dev --workspace=@mystweaver/api
 
 # In another terminal, run the Web UI
-npm run dev --workspace=@labrats/web
+npm run dev --workspace=@mystweaver/web
 ```
 
 The admin UI will be available at `http://localhost:5173` and the API at `http://localhost:3000`.
@@ -79,7 +79,7 @@ The admin UI will be available at `http://localhost:5173` and the API at `http:/
 ### Basic Usage
 
 ```javascript
-import { createClient } from '@labrats/sdk-js';
+import { createClient } from '@mystweaver/sdk-js';
 
 const client = createClient({
   apiUrl: 'http://localhost:3000/api',
@@ -100,7 +100,7 @@ if (isEnabled) {
 ## Project Structure
 
 ```
-labrats/
+mystweaver/
 ├── apps/
 │   ├── api/                 # Express backend server
 │   │   ├── src/
@@ -197,7 +197,7 @@ mkdir -p packages/my-package/src
 
 # Install and verify
 npm install
-npm run build --workspace=@labrats/my-package
+npm run build --workspace=@mystweaver/my-package
 ```
 
 ## Contributing
@@ -210,13 +210,13 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/labrats/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/labrats/discussions)
-- **Documentation**: [Docs](https://labrats.dev) *(coming soon)*
+- **Issues**: [GitHub Issues](https://github.com/PGRBRyant/mystweaver/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/PGRBRyant/mystweaver/discussions)
+- **Documentation**: [Docs](https://mystweaver.dev) *(coming soon)*
 
 ## License
 
-Labrats is licensed under the [Apache License 2.0](LICENSE).
+Mystweaver is licensed under the [Apache License 2.0](LICENSE).
 
 ## Acknowledgments
 

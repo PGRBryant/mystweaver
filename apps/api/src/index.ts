@@ -13,7 +13,7 @@ app.get('/health', (_req, res) => {
 // app.use('/api/v1/flags', flagsRouter);
 
 const server = app.listen(port, () => {
-  console.warn(`[labrats-api] listening on port ${port}`);
+  console.log(`[mystweaver-api] listening on port ${port}`);
 });
 
 process.on('SIGTERM', () => {

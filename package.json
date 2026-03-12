@@ -1,5 +1,5 @@
 {
-  "name": "@labrats/monorepo",
+  "name": "@mystweaver/monorepo",
   "version": "0.1.0",
   "description": "An open-source feature flag service, self-hosted LaunchDarkly alternative",
   "private": true,
@@ -9,8 +9,9 @@
     "npm": ">=9.0.0"
   },
   "workspaces": [
-    "apps/*",
-    "packages/*"
+    "apps/api",
+    "apps/web",
+    "packages/sdk-js"
   ],
   "scripts": {
     "dev": "npm run dev --workspaces",
@@ -35,10 +36,10 @@
   "packageManager": "npm@9.0.0+",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/labrats"
+    "url": "https://github.com/PGRBRyant/mystweaver"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/labrats/issues"
+    "url": "https://github.com/PGRBRyant/mystweaver/issues"
   },
-  "homepage": "https://github.com/yourusername/labrats"
+  "homepage": "https://github.com/PGRBRyant/mystweaver"
 }

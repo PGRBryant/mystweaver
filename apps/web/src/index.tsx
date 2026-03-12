@@ -6,7 +6,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
       <div className="text-center">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">Labrats</h1>
+        <h1 className="text-4xl font-bold text-gray-900 mb-2">Mystweaver</h1>
         <p className="text-gray-500">Feature flag service &mdash; coming soon</p>
       </div>
     </div>

@@ -1,7 +1,7 @@
 {
-  "name": "@labrats/sdk-js",
+  "name": "@mystweaver/sdk-js",
   "version": "0.1.0",
-  "description": "JavaScript/TypeScript SDK for Labrats",
+  "description": "JavaScript/TypeScript SDK for Mystweaver",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",

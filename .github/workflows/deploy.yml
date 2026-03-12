@@ -1,0 +1,91 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write  # Required for Workload Identity Federation
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false  # Never cancel an in-flight deploy
+
+jobs:
+
+  # ── Build & push Docker image ─────────────────────────────────────────────────
+  build:
+    runs-on: ubuntu-latest
+    name: Build & Push Image
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run build --workspace=@mystweaver/api
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Build and push image
+        id: meta
+        env:
+          IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/mystweaver/api
+          SHA: ${{ github.sha }}
+        run: |
+          docker build \
+            --tag "$IMAGE:$SHA" \
+            --tag "$IMAGE:latest" \
+            --label "org.opencontainers.image.revision=$SHA" \
+            --label "org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}" \
+            .
+          docker push "$IMAGE:$SHA"
+          docker push "$IMAGE:latest"
+          echo "image=$IMAGE:$SHA" >> "$GITHUB_OUTPUT"
+
+  # ── Deploy to Cloud Run ───────────────────────────────────────────────────────
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to Cloud Run
+    needs: build
+    environment: production
+
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: mystweaver-api
+          region: ${{ secrets.GCP_REGION }}
+          image: ${{ needs.build.outputs.image }}
+
+      - name: Show service URL
+        run: |
+          URL=$(gcloud run services describe mystweaver-api \
+            --region=${{ secrets.GCP_REGION }} \
+            --format='value(status.url)')
+          echo "Deployed to: $URL"
+          echo "Health check: $URL/health"

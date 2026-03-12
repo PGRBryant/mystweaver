@@ -49,8 +49,18 @@ firebase-debug.log
 .gcloud/
 service-account-key.json
 
+# Terraform
+infra/terraform/.terraform/
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.backup
+infra/terraform/terraform.tfvars
+infra/terraform/.terraform.lock.hcl
+
 # Docker
 .docker/
+
+# Claude Code
+.claude/
 
 # Temporary
 tmp/

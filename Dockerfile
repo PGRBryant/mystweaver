@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Multi-stage build for the Labrats API server (monorepo)
+# Multi-stage build for the Mystweaver API server (monorepo)
 
 ###############################################
 # Stage 1: deps — install all workspace deps  #
@@ -10,9 +10,11 @@ WORKDIR /app
 # Copy root manifests first for better layer caching
 COPY package.json package-lock.json ./
 
-# Copy each workspace's package.json so npm ci resolves the workspace graph
-COPY apps/api/package.json        apps/api/
-COPY packages/sdk-js/package.json packages/sdk-js/
+# All workspace manifests must be present so npm ci can resolve the full
+# workspace graph (root package.json declares workspaces: [apps/*, packages/*])
+COPY apps/api/package.json         apps/api/
+COPY apps/web/package.json         apps/web/
+COPY packages/sdk-js/package.json  packages/sdk-js/
 
 RUN npm ci --include=dev
 
@@ -24,14 +26,19 @@ WORKDIR /app
 
 # Reuse installed modules from deps stage
 COPY --from=deps /app/node_modules            ./node_modules
-COPY --from=deps /app/apps/api/node_modules   ./apps/api/node_modules/
+
+# npm needs root + workspace manifests to resolve the workspace graph
+COPY package.json package-lock.json ./
+COPY apps/api/package.json         apps/api/
+COPY apps/web/package.json         apps/web/
+COPY packages/sdk-js/package.json  packages/sdk-js/
 
 # Copy source files
 COPY tsconfig.json ./
 COPY config/       ./config/
 COPY apps/api/     ./apps/api/
 
-RUN npm run build --workspace=@labrats/api
+RUN npm run build --workspace=@mystweaver/api
 
 ###############################################
 # Stage 3: runner — lean production image     #
@@ -44,18 +51,21 @@ WORKDIR /app
 RUN apk add --no-cache dumb-init
 
 # Non-root user
-RUN addgroup -S labrats && adduser -S labrats -G labrats
+RUN addgroup -S mystweaver && adduser -S mystweaver -G mystweaver
 
 # Re-install production-only dependencies
+# All workspace manifests must be present for npm to resolve the workspace graph
 COPY package.json package-lock.json ./
-COPY apps/api/package.json apps/api/
+COPY apps/api/package.json         apps/api/
+COPY apps/web/package.json         apps/web/
+COPY packages/sdk-js/package.json  packages/sdk-js/
 RUN npm ci --omit=dev
 
 # Copy compiled output
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 
-RUN chown -R labrats:labrats /app
-USER labrats
+RUN chown -R mystweaver:mystweaver /app
+USER mystweaver
 
 EXPOSE 3000
 

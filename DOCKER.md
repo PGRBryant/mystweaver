@@ -19,10 +19,10 @@ docker-compose down -v
 ## Services
 
 ### Firestore Emulator
-- **Port**: 8080 (API), 4000 (UI)
-- **URL**: http://localhost:4000
+- **Port**: 8080
 - **Connection**: `FIRESTORE_EMULATOR_HOST=localhost:8080`
-- **Project ID**: `labrats-local`
+- **Project ID**: `mystweaver-local`
+- **Note**: Uses `cloud-sdk:emulators` which provides the bare gRPC/REST emulator. There is no web UI — use the Firestore client SDK or REST API to interact with it directly.
 
 ### Redis
 - **Port**: 6379
@@ -43,7 +43,7 @@ docker-compose down -v
 docker-compose up -d firestore redis
 
 # In your terminal, run
-npm run dev --workspace=@labrats/api
+npm run dev --workspace=@mystweaver/api
 
 # Set environment variables
 export FIRESTORE_EMULATOR_HOST=localhost:8080
@@ -53,7 +53,7 @@ export REDIS_HOST=localhost
 ### Option 2: Run Everything in Docker
 
 ```bash
-docker-compose up
+docker-compose --profile api up
 
 # API logs
 docker-compose logs -f api
@@ -64,11 +64,11 @@ docker-compose logs -f api
 ### Firestore
 
 ```bash
-# Access Firestore UI
-open http://localhost:4000
+# With FIRESTORE_EMULATOR_HOST set, any Firestore client connects to the emulator
+export FIRESTORE_EMULATOR_HOST=localhost:8080
 
-# Or programmatically:
-# With FIRESTORE_EMULATOR_HOST set, any Firestore client will connect to emulator
+# Verify the emulator is reachable
+curl -s http://localhost:8080
 ```
 
 ### Redis
@@ -110,10 +110,10 @@ docker-compose build --no-cache
 
 ### Data Persistence
 
-- **Firestore**: Data stored in `firestore-data` volume
-- **Redis**: Data stored in `redis-data` volume
+- **Firestore**: In-memory only — data is lost when the container stops (emulator limitation)
+- **Redis**: Persisted in the `redis-data` volume (append-only log enabled)
 
-To reset:
+To reset Redis data:
 ```bash
 docker-compose down -v
 docker-compose up -d
@@ -130,4 +130,3 @@ See the `environment` section in `docker-compose.yml` for all available options:
 | `FIRESTORE_EMULATOR_HOST` | Firestore emulator | `localhost:8080` |
 | `REDIS_HOST` | Redis hostname | `redis` |
 | `REDIS_PORT` | Redis port | `6379` |
-| `API_KEY_HEADER` | Header for API key | `X-API-Key` |

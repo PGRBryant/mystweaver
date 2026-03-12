@@ -1,13 +1,13 @@
-# labrats-sdk (Python)
+# mystweaver-sdk (Python)
 
-Python SDK for the [Labrats](https://github.com/yourusername/labrats) feature flag service.
+Python SDK for the [Mystweaver](https://github.com/PGRBRyant/mystweaver) feature flag service.
 
 > **Status**: Not yet implemented. Public API types are defined; full HTTP client coming soon.
 
 ## Installation
 
 ```bash
-pip install labrats-sdk
+pip install mystweaver-sdk
 ```
 
 ## Usage

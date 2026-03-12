@@ -4,4 +4,8 @@
 project_id  = "your-gcp-project-id"
 region      = "us-central1"
 github_org  = "yourusername"
-github_repo = "labrats"
+github_repo = "mystweaver"
+
+# Redis — use STANDARD_HA in production for high availability
+redis_tier           = "BASIC"
+redis_memory_size_gb = 1

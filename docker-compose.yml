@@ -10,15 +10,15 @@ services:
   # ── Firestore emulator ─────────────────────────────────────────────────────
   firestore:
     image: gcr.io/google.com/cloudsdktool/cloud-sdk:emulators
-    container_name: labrats-firestore
+    container_name: mystweaver-firestore
     command: >
       gcloud beta emulators firestore start
         --host-port=0.0.0.0:8080
-        --project=labrats-local
+        --project=mystweaver-local
     ports:
       - '8080:8080'
     environment:
-      CLOUDSDK_CORE_PROJECT: labrats-local
+      CLOUDSDK_CORE_PROJECT: mystweaver-local
     healthcheck:
       test: ['CMD', 'curl', '-sf', 'http://localhost:8080']
       interval: 10s
@@ -29,7 +29,7 @@ services:
   # ── Redis ───────────────────────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
-    container_name: labrats-redis
+    container_name: mystweaver-redis
     ports:
       - '6379:6379'
     command: redis-server --appendonly yes
@@ -47,14 +47,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: labrats-api
+    container_name: mystweaver-api
     ports:
       - '3000:3000'
     environment:
       NODE_ENV: development
       PORT: '3000'
       FIRESTORE_EMULATOR_HOST: firestore:8080
-      GOOGLE_CLOUD_PROJECT: labrats-local
+      GOOGLE_CLOUD_PROJECT: mystweaver-local
       REDIS_HOST: redis
       REDIS_PORT: '6379'
     depends_on:
@@ -74,4 +74,4 @@ volumes:
 
 networks:
   default:
-    name: labrats-network
+    name: mystweaver-network

@@ -1,54 +1,52 @@
 # Quick Reference Card
 
-## 🚀 Quick Start (Local Development)
+## Quick Start (Local Development)
 
 ```bash
 # Install dependencies
 npm install
 
-# Start Docker services (Firestore + Redis)
+# Start Docker services (Firestore emulator + Redis)
 docker-compose up -d
 
-# Run API server (in terminal 1)
-npm run dev --workspace=@labrats/api
+# Run API server (terminal 1)
+npm run dev --workspace=@mystweaver/api
 
-# Run Web UI (in terminal 2)
-npm run dev --workspace=@labrats/web
+# Run Web UI (terminal 2)
+npm run dev --workspace=@mystweaver/web
 ```
 
-URLs:
+Local URLs:
 - **Web UI**: http://localhost:5173
 - **API**: http://localhost:3000
-- **Firestore UI**: http://localhost:4000
+- **Firestore emulator**: localhost:8080 (no UI — bare gRPC/REST endpoint)
+- **Redis**: localhost:6379
 
 ---
 
-## 📝 Git Workflow
+## Git Workflow
 
 ```bash
 # 1. Create feature branch
 git checkout -b feature/my-feature
 
-# 2. Make changes and commit (Conventional Commits format)
-git add .
+# 2. Commit (Conventional Commits format)
+git add apps/api/src/my-file.ts
 git commit -m "feat(api): add new endpoint"
-# Commit types: feat, fix, docs, style, refactor, test, chore
+# Types: feat, fix, docs, style, refactor, test, chore
 
-# 3. Push and create PR
+# 3. Push and open PR
 git push origin feature/my-feature
-
-# 4. Merge after CI passes and review approved
 ```
 
 ---
 
-## 🔍 Common Commands
+## Common Commands
 
 | Command | Purpose |
 |---------|---------|
 | `npm install` | Install/update dependencies |
-| `npm run dev` | Run dev in all workspaces |
-| `npm run dev --workspace=@labrats/api` | Run API only |
+| `npm run dev --workspace=@mystweaver/api` | Run API only |
 | `npm run typecheck` | Type check all packages |
 | `npm run lint` | Lint all packages |
 | `npm run test` | Run tests |
@@ -58,97 +56,79 @@ git push origin feature/my-feature
 
 ---
 
-## 🐳 Docker Commands
+## Docker Commands
 
 ```bash
-# Start services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
-
-# Reset data (delete volumes)
-docker-compose down -v
-
-# Rebuild images
-docker-compose build --no-cache
+docker-compose up -d                  # start services in background
+docker-compose logs -f                # tail all logs
+docker-compose logs -f firestore      # tail one service
+docker-compose down                   # stop services
+docker-compose down -v                # stop + wipe volumes
 ```
 
 ---
 
-## 🔐 GitHub Secrets (After GCP Setup)
+## GCP Setup (one-time)
 
-Add these in: **Settings** → **Secrets and variables** → **Actions**
+```bash
+# 1. Bootstrap (creates state bucket, enables APIs)
+export PROJECT_ID="your-project-id" GITHUB_ORG="yourusername"
+bash infra/bootstrap.sh
 
-| Secret | Value |
-|--------|-------|
-| `GCP_PROJECT_ID` | Your GCP project ID |
-| `GCP_WORKLOAD_IDENTITY_PROVIDER` | Workload Identity Provider resource name |
-| `GCP_SERVICE_ACCOUNT_EMAIL` | GitHub Actions service account email |
-| `GCP_REGION` | GCP region (e.g., us-central1) |
+# 2. Apply infrastructure
+cp infra/terraform/terraform.tfvars.example infra/terraform/terraform.tfvars
+# edit terraform.tfvars
+cd infra/terraform && terraform init && terraform apply
+
+# 3. Add GitHub secrets (values from `terraform output`)
+gh secret set GCP_PROJECT_ID        --body "$PROJECT_ID"
+gh secret set GCP_REGION            --body "us-central1"
+gh secret set GCP_WORKLOAD_IDENTITY_PROVIDER --body "$(terraform output -raw workload_identity_provider)"
+gh secret set GCP_SERVICE_ACCOUNT_EMAIL      --body "$(terraform output -raw github_actions_service_account)"
+```
+
+Full guide: [GCP_SETUP.md](GCP_SETUP.md)
 
 ---
 
-## 📋 Checklist: Before Your First PR
+## Checklist: Before Your First PR
 
-- [ ] Code follows ESLint rules: `npm run lint`
-- [ ] Types are correct: `npm run typecheck`
-- [ ] Tests pass: `npm run test`
-- [ ] Code is formatted: `npm run format`
+- [ ] `npm run lint` passes
+- [ ] `npm run typecheck` passes
+- [ ] `npm run test` passes
+- [ ] `npm run format` applied
 - [ ] Commit message follows Conventional Commits
-- [ ] PR description includes what and why
+- [ ] PR description explains what and why
 
 ---
 
-## 🆘 Quick Troubleshooting
+## Quick Troubleshooting
 
 **Docker won't start?**
 ```bash
 docker-compose logs firestore
-# Or reset: docker-compose down -v && docker-compose up -d
+docker-compose down -v && docker-compose up -d
 ```
 
 **TypeScript errors?**
 ```bash
 npm run typecheck
-# Make sure tsconfig.json extends config/tsconfig.base.json
-```
-
-**ESLint issues?**
-```bash
-npm run format  # Auto-fix
-npm run lint    # Check remaining issues
 ```
 
 **Port already in use?**
 ```bash
-lsof -i :3000   # Find process
-kill -9 <PID>   # Kill it
+lsof -i :3000   # find process
+kill -9 <PID>
 ```
 
 ---
 
-## 📚 Documentation
+## Documentation
 
-- **[README.md](README.md)** – Project overview
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** – Dev guidelines
-- **[DOCKER.md](DOCKER.md)** – Docker setup
-- **[GITHUB_SETUP.md](GITHUB_SETUP.md)** – GitHub repo init
-- **[GCP_SETUP.md](GCP_SETUP.md)** – GCP + Workload Identity
-- **[SETUP_COMPLETE.md](SETUP_COMPLETE.md)** – Full setup summary
-
----
-
-## 🎯 Next Steps
-
-1. Initialize GitHub repo: [GITHUB_SETUP.md](GITHUB_SETUP.md)
-2. Set up GCP access: [GCP_SETUP.md](GCP_SETUP.md)
-3. Run `docker-compose up -d` to start developing
-4. Follow [CONTRIBUTING.md](CONTRIBUTING.md) for coding standards
-
----
-
-**Keep this file handy as you develop!**
+| Doc | Purpose |
+|-----|---------|
+| [README.md](README.md) | Project overview |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Dev guidelines |
+| [DOCKER.md](DOCKER.md) | Local dev environment |
+| [GITHUB_SETUP.md](GITHUB_SETUP.md) | GitHub repo init |
+| [GCP_SETUP.md](GCP_SETUP.md) | GCP + Terraform + WIF |

@@ -1,6 +1,6 @@
-# Contributing to Labrats
+# Contributing to Mystweaver
 
-Thank you for your interest in contributing to Labrats! We welcome contributions from the community, whether it's bug reports, feature requests, documentation, or code.
+Thank you for your interest in contributing to Mystweaver! We welcome contributions from the community, whether it's bug reports, feature requests, documentation, or code.
 
 ## Code of Conduct
 
@@ -18,8 +18,8 @@ Please be respectful and constructive in all interactions. We are committed to p
 
 1. **Fork and Clone**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/labrats.git
-   cd labrats
+   git clone https://github.com/YOUR_USERNAME/mystweaver.git
+   cd mystweaver
    ```
 
 2. **Install Dependencies**
@@ -120,7 +120,7 @@ All checks must pass before merging.
 npm run test
 
 # Run tests in a specific workspace
-npm run test --workspace=@labrats/api
+npm run test --workspace=@mystweaver/api
 
 # Watch mode (re-run on file change)
 npm run test -- --watch
@@ -267,7 +267,7 @@ try {
 
 - **GitHub Issues**: Ask a question as an issue discussion
 - **Slack/Discord** *(coming soon)*: Real-time community chat
-- **Documentation**: Check the [docs](https://labrats.dev) *(coming soon)*
+- **Documentation**: Check the [docs](https://mystweaver.dev) *(coming soon)*
 
 ## Maintainers
 
@@ -275,4 +275,4 @@ try {
 
 ---
 
-Thank you for contributing to Labrats! 🎉
+Thank you for contributing to Mystweaver! 🎉

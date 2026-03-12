@@ -23,5 +23,22 @@ variable "github_org" {
 variable "github_repo" {
   description = "GitHub repository name (without the org prefix)"
   type        = string
-  default     = "labrats"
+  default     = "mystweaver"
+}
+
+variable "redis_tier" {
+  description = "Redis service tier: BASIC (no replication) or STANDARD_HA (high-availability)"
+  type        = string
+  default     = "BASIC"
+
+  validation {
+    condition     = contains(["BASIC", "STANDARD_HA"], var.redis_tier)
+    error_message = "redis_tier must be BASIC or STANDARD_HA."
+  }
+}
+
+variable "redis_memory_size_gb" {
+  description = "Redis memory size in GB"
+  type        = number
+  default     = 1
 }
