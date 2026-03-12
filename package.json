@@ -1,7 +1,7 @@
 {
   "name": "@mystweaver/monorepo",
   "version": "0.1.0",
-  "description": "An open-source feature flag service, self-hosted LaunchDarkly alternative",
+  "description": "An open-source feature flag and experimentation platform, self-hosted LaunchDarkly alternative",
   "private": true,
   "license": "Apache-2.0",
   "engines": {
@@ -21,6 +21,7 @@
     "typecheck": "npm run typecheck --workspaces",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "seed": "tsx scripts/seed-flags.ts",
     "clean": "npm run clean --workspaces && rimraf node_modules"
   },
   "devDependencies": {
@@ -31,6 +32,7 @@
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.1.0",
     "rimraf": "^5.0.5",
+    "tsx": "^4.6.2",
     "typescript": "^5.3.3"
   },
   "packageManager": "npm@9.0.0+",

@@ -1,0 +1,15 @@
+{
+  "extends": ["../../.eslintrc.json"],
+  "env": {
+    "browser": true,
+    "node": false
+  },
+  "globals": {
+    "RequestInit": "readonly"
+  },
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  }
+}

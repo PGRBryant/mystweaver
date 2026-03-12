@@ -1,4 +1,6 @@
-import type { FlagType, TargetingRule, EvaluationContext } from './flag';
+import type { FlagType, TargetingRule, UserContext } from './flag';
+
+// ── Flag CRUD ───────────────────────────────────────────────────────────
 
 export interface CreateFlagRequest {
   key: string;
@@ -8,6 +10,7 @@ export interface CreateFlagRequest {
   defaultValue: unknown;
   enabled?: boolean;
   rules?: TargetingRule[];
+  tags?: string[];
 }
 
 export interface UpdateFlagRequest {
@@ -16,24 +19,33 @@ export interface UpdateFlagRequest {
   enabled?: boolean;
   defaultValue?: unknown;
   rules?: TargetingRule[];
+  tags?: string[];
 }
+
+// ── SDK Evaluate ────────────────────────────────────────────────────────
 
 export interface EvaluateRequest {
   flagKey: string;
-  context: EvaluationContext;
+  userContext: UserContext;
 }
 
-export interface BatchEvaluateRequest {
-  flagKeys: string[];
-  context: EvaluationContext;
+export interface BulkEvaluateRequest {
+  flags: string[];
+  userContext: UserContext;
 }
 
-export interface EvaluateResponse {
-  flagKey: string;
-  value: unknown;
-  type: FlagType;
+// ── SDK Events ──────────────────────────────────────────────────────────
+
+export interface SDKEvent {
+  type: string;
+  flagKey?: string;
+  event?: string;
+  userId?: string;
+  value?: unknown;
+  properties?: Record<string, unknown>;
+  timestamp: number;
 }
 
-export interface BatchEvaluateResponse {
-  results: EvaluateResponse[];
+export interface EventIngestionRequest {
+  events: SDKEvent[];
 }

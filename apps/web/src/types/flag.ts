@@ -1,5 +1,3 @@
-import type { Timestamp } from '@google-cloud/firestore';
-
 export type FlagType = 'boolean' | 'string' | 'number' | 'json';
 
 export type Operator = 'eq' | 'neq' | 'gt' | 'lt' | 'gte' | 'lte' | 'in' | 'contains';
@@ -15,30 +13,44 @@ export interface TargetingRule {
   description: string;
   conditions: Condition[];
   value: unknown;
-  rolloutPercentage?: number; // 0–100
+  rolloutPercentage?: number;
 }
 
-export interface FlagDocument {
+export interface Flag {
   key: string;
   name: string;
   description: string;
+  enabled: boolean;
   type: FlagType;
   defaultValue: unknown;
-  enabled: boolean;
   rules: TargetingRule[];
   tags: string[];
-  deletedAt?: Timestamp | null;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt: string;
+  updatedAt: string;
   createdBy: string;
 }
 
-export interface UserContext {
-  id: string;
-  attributes: Record<string, unknown>;
+export interface CreateFlagData {
+  key: string;
+  name: string;
+  description?: string;
+  type: FlagType;
+  defaultValue: unknown;
+  enabled?: boolean;
+  rules?: TargetingRule[];
+  tags?: string[];
 }
 
-export interface EvaluationResult {
+export interface UpdateFlagData {
+  name?: string;
+  description?: string;
+  enabled?: boolean;
+  defaultValue?: unknown;
+  rules?: TargetingRule[];
+  tags?: string[];
+}
+
+export interface EvaluateResult {
   flagKey: string;
   value: unknown;
   type: FlagType;

@@ -6,6 +6,7 @@ import type { Subscription } from '@google-cloud/pubsub';
 let subscription: Subscription | null = null;
 
 interface FlagChangeMessage {
+  projectId: string;
   flagKey: string;
   action: 'update' | 'delete';
 }
@@ -13,10 +14,11 @@ interface FlagChangeMessage {
 export async function publishFlagChange(
   flagKey: string,
   action: 'update' | 'delete',
+  projectId?: string,
 ): Promise<void> {
   try {
     await flagUpdatesTopic.publishMessage({
-      json: { flagKey, action } satisfies FlagChangeMessage,
+      json: { projectId: projectId ?? '', flagKey, action } satisfies FlagChangeMessage,
     });
   } catch (err) {
     console.warn('[pubsub] failed to publish flag change:', err);
@@ -35,7 +37,9 @@ export async function startSubscription(): Promise<void> {
     sub.on('message', (message) => {
       try {
         const data = JSON.parse(message.data.toString()) as FlagChangeMessage;
-        invalidateFlag(data.flagKey).catch(() => {});
+        if (data.projectId) {
+          invalidateFlag(data.projectId, data.flagKey).catch(() => {});
+        }
       } catch {
         // Malformed message — ack and move on.
       }

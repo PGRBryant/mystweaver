@@ -1,22 +1,35 @@
-import { timingSafeEqual } from 'crypto';
 import type { Request, Response, NextFunction } from 'express';
-import { config } from '../config';
+import { validateSDKKey } from '../services/sdk-key-service';
 
-export function apiKeyAuth(req: Request, res: Response, next: NextFunction): void {
-  const apiKey = req.headers['x-api-key'];
+// Extend Express Request to carry SDK context.
+declare global {
+  namespace Express {
+    interface Request {
+      sdkProjectId?: string;
+    }
+  }
+}
 
-  if (!apiKey || typeof apiKey !== 'string') {
-    res.status(401).json({ error: 'Missing x-api-key header' });
+/**
+ * Validates Authorization: Bearer <sdk-key> header.
+ * On success, sets req.sdkProjectId to the key's projectId.
+ */
+export async function sdkAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+  const header = req.headers.authorization;
+
+  if (!header || !header.startsWith('Bearer ')) {
+    res.status(401).json({ error: 'Missing or invalid Authorization header' });
     return;
   }
 
-  const expected = Buffer.from(config.apiSigningKey);
-  const received = Buffer.from(apiKey);
+  const rawKey = header.slice(7);
+  const projectId = await validateSDKKey(rawKey);
 
-  if (expected.length !== received.length || !timingSafeEqual(expected, received)) {
-    res.status(401).json({ error: 'Invalid API key' });
+  if (!projectId) {
+    res.status(401).json({ error: 'Invalid or revoked SDK key' });
     return;
   }
 
+  req.sdkProjectId = projectId;
   next();
 }

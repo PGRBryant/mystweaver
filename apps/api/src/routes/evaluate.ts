@@ -1,60 +1,70 @@
 import { Router } from 'express';
-import { apiKeyAuth } from '../middleware/api-key-auth';
+import { sdkAuth } from '../middleware/api-key-auth';
 import { validateBody } from '../middleware/validate';
 import { getCachedFlag } from '../services/cache-service';
 import { evaluateFlag } from '../services/evaluation-engine';
-import type { EvaluateRequest, BatchEvaluateRequest, EvaluateResponse } from '../types/api';
+import { AppError } from '../middleware/error-handler';
+import type { EvaluateRequest, BulkEvaluateRequest } from '../types/api';
 
 const router = Router();
 
-// All evaluate routes require API key auth.
-router.use(apiKeyAuth);
+// All SDK evaluate routes require Bearer SDK key auth.
+router.use(sdkAuth);
 
-// POST /api/v1/evaluate — evaluate a single flag
+// POST /sdk/evaluate — evaluate a single flag
 router.post(
   '/',
-  validateBody({
-    flagKey: 'string',
-    context: 'object',
-  }),
+  validateBody({ flagKey: 'string', userContext: 'object' }),
   async (req, res, next) => {
     try {
-      const { flagKey, context } = req.body as EvaluateRequest;
-      const flag = await getCachedFlag(flagKey);
-
-      if (!flag) {
-        res.json({ flagKey, value: null, type: 'boolean' } satisfies EvaluateResponse);
-        return;
-      }
-
-      const value = evaluateFlag(flag, context);
-      res.json({ flagKey, value, type: flag.type } satisfies EvaluateResponse);
+      const { flagKey, userContext } = req.body as EvaluateRequest;
+      const projectId = req.sdkProjectId!;
+      const flag = await getCachedFlag(projectId, flagKey);
+      const result = evaluateFlag(flag, flagKey, userContext);
+      res.json(result);
     } catch (err) {
       next(err);
     }
   },
 );
 
-// POST /api/v1/evaluate/batch — evaluate multiple flags
+// POST /sdk/evaluate/bulk — evaluate multiple flags
 router.post(
-  '/batch',
-  validateBody({
-    flagKeys: 'array',
-    context: 'object',
-  }),
+  '/bulk',
+  validateBody({ flags: 'array', userContext: 'object' }),
   async (req, res, next) => {
     try {
-      const { flagKeys, context } = req.body as BatchEvaluateRequest;
+      const { flags: flagKeys, userContext } = req.body as BulkEvaluateRequest;
+      const projectId = req.sdkProjectId!;
 
-      const results = await Promise.all(
-        flagKeys.map(async (flagKey): Promise<EvaluateResponse> => {
-          const flag = await getCachedFlag(flagKey);
-          if (!flag) return { flagKey, value: null, type: 'boolean' };
-          return { flagKey, value: evaluateFlag(flag, context), type: flag.type };
+      if (flagKeys.length > 50) {
+        throw new AppError('Maximum 50 flags per bulk request', 400);
+      }
+
+      const start = Date.now();
+
+      // Deduplicate keys, fetch in parallel.
+      const uniqueKeys = [...new Set(flagKeys)];
+      const flagMap = new Map<string, Awaited<ReturnType<typeof getCachedFlag>>>();
+      await Promise.all(
+        uniqueKeys.map(async (key) => {
+          flagMap.set(key, await getCachedFlag(projectId, key));
         }),
       );
 
-      res.json({ results });
+      // Evaluate all.
+      const flags: Record<string, { value: unknown; reason: string; enabled: boolean }> = {};
+      for (const key of flagKeys) {
+        const flag = flagMap.get(key) ?? null;
+        const result = evaluateFlag(flag, key, userContext);
+        flags[key] = { value: result.value, reason: result.reason, enabled: result.enabled };
+      }
+
+      res.json({
+        flags,
+        evaluatedAt: Math.floor(Date.now() / 1000),
+        durationMs: Date.now() - start,
+      });
     } catch (err) {
       next(err);
     }

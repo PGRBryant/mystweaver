@@ -1,9 +1,10 @@
 import { createHash } from 'crypto';
 import type {
   FlagDocument,
-  EvaluationContext,
-  RuleCondition,
+  UserContext,
+  Condition,
   TargetingRule,
+  EvaluationResult,
 } from '../types/flag';
 
 /**
@@ -18,42 +19,31 @@ function rolloutHash(flagKey: string, userId: string): number {
 }
 
 function matchesCondition(
-  context: EvaluationContext,
-  condition: RuleCondition,
+  context: UserContext,
+  condition: Condition,
 ): boolean {
-  const raw = context[condition.attribute];
+  const raw = context.attributes[condition.attribute];
   if (raw === undefined || raw === null) return false;
 
-  const ctxVal = String(raw);
   const condVal = condition.value;
 
   switch (condition.operator) {
-    case 'equals':
-      return ctxVal === String(condVal);
-    case 'not_equals':
-      return ctxVal !== String(condVal);
-    case 'contains':
-      return ctxVal.includes(String(condVal));
-    case 'not_contains':
-      return !ctxVal.includes(String(condVal));
-    case 'starts_with':
-      return ctxVal.startsWith(String(condVal));
-    case 'ends_with':
-      return ctxVal.endsWith(String(condVal));
-    case 'in_list':
-      return Array.isArray(condVal) && condVal.map(String).includes(ctxVal);
-    case 'not_in_list':
-      return !Array.isArray(condVal) || !condVal.map(String).includes(ctxVal);
-    case 'greater_than':
+    case 'eq':
+      return raw === condVal || String(raw) === String(condVal);
+    case 'neq':
+      return raw !== condVal && String(raw) !== String(condVal);
+    case 'gt':
       return Number(raw) > Number(condVal);
-    case 'less_than':
+    case 'lt':
       return Number(raw) < Number(condVal);
-    case 'regex':
-      try {
-        return new RegExp(String(condVal)).test(ctxVal);
-      } catch {
-        return false;
-      }
+    case 'gte':
+      return Number(raw) >= Number(condVal);
+    case 'lte':
+      return Number(raw) <= Number(condVal);
+    case 'in':
+      return Array.isArray(condVal) && condVal.some((v) => String(v) === String(raw));
+    case 'contains':
+      return String(raw).includes(String(condVal));
     default:
       return false;
   }
@@ -62,7 +52,7 @@ function matchesCondition(
 function ruleMatches(
   rule: TargetingRule,
   flag: FlagDocument,
-  context: EvaluationContext,
+  context: UserContext,
 ): boolean {
   // All conditions must match (AND logic).
   if (!rule.conditions.every((c) => matchesCondition(context, c))) {
@@ -72,30 +62,71 @@ function ruleMatches(
   // Check percentage rollout.
   const pct = rule.rolloutPercentage;
   if (pct !== undefined && pct < 100) {
-    return rolloutHash(flag.key, context.userId) < pct;
+    return rolloutHash(flag.key, context.id) < pct;
   }
 
   return true;
 }
 
 /**
- * Pure evaluation function. No I/O, no side effects.
- * Rules are evaluated in order; first match wins.
- * Returns defaultValue if disabled or no rule matches.
+ * Evaluate a single flag for a user context.
+ * Pure function — no I/O, deterministic.
  */
 export function evaluateFlag(
-  flag: FlagDocument,
-  context: EvaluationContext,
-): unknown {
-  if (!flag.enabled) return flag.defaultValue;
+  flag: FlagDocument | null,
+  flagKey: string,
+  context: UserContext,
+): EvaluationResult {
+  const now = Math.floor(Date.now() / 1000);
 
+  // Flag not found.
+  if (!flag) {
+    return {
+      flagKey,
+      value: null,
+      type: 'boolean',
+      reason: 'flag_not_found',
+      enabled: false,
+      evaluatedAt: now,
+    };
+  }
+
+  // Flag disabled.
+  if (!flag.enabled) {
+    return {
+      flagKey,
+      value: flag.defaultValue,
+      type: flag.type,
+      reason: 'flag_disabled',
+      enabled: false,
+      evaluatedAt: now,
+    };
+  }
+
+  // Evaluate rules in order — first match wins.
   for (const rule of flag.rules) {
     if (ruleMatches(rule, flag, context)) {
-      return rule.value;
+      return {
+        flagKey,
+        value: rule.value,
+        type: flag.type,
+        reason: `rule:${rule.id}`,
+        ruleId: rule.id,
+        enabled: true,
+        evaluatedAt: now,
+      };
     }
   }
 
-  return flag.defaultValue;
+  // No rules matched — return default.
+  return {
+    flagKey,
+    value: flag.defaultValue,
+    type: flag.type,
+    reason: 'default',
+    enabled: true,
+    evaluatedAt: now,
+  };
 }
 
 // Exported for testing only.
