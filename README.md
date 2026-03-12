@@ -20,7 +20,7 @@ A production-ready alternative to LaunchDarkly, built for teams that want full c
 | **Phase 1** | Foundation — SDK key management, flag CRUD, evaluation engine, SSE streaming, event ingestion | **Complete** |
 | **Phase 2** | Admin Interface — authentication, flag management UI, audit log | **Complete** |
 | **Phase 3** | Experimentation — A/B testing, statistical results engine, live results UI | **Complete** |
-| **Phase 4** | SDK Package — `@mystweaver/sdk` for JS/TS (browser + Node) | Not started |
+| **Phase 4** | SDK Package — `@mystweaver/sdk-js` for JS/TS (browser + Node) | **Complete** |
 | **Phase 5** | Production Readiness — Terraform, CI/CD, observability, security hardening | Partial (infra exists) |
 
 See [ROADMAP.md](ROADMAP.md) for the full engineering roadmap with milestones, dependency graph, and definition of done for each item.
@@ -88,11 +88,57 @@ See [ROADMAP.md](ROADMAP.md) for the full engineering roadmap with milestones, d
 - Welch's t-test for statistical significance (p < 0.05)
 - Results computed on demand from ingested evaluation + metric events
 
+### SDK (`@mystweaver/sdk-js`)
+
+```typescript
+import { MystweaverClient } from '@mystweaver/sdk-js';
+
+const client = new MystweaverClient({
+  apiKey: 'mw_sdk_live_...',
+  baseUrl: 'https://api.mystweaver.dev',
+  defaults: { 'game.task-timer-seconds': 8 },  // fallbacks when API is down
+  streaming: true,                               // enable real-time SSE updates
+  flushInterval: 5000,                           // event batch flush interval (ms)
+});
+
+// Evaluate flags
+const enabled = await client.flag('powerups.jetpack-enabled', { id: 'user-123' });
+const timer = await client.value('game.task-timer-seconds', { id: 'user-123' }, 8);
+const weights = await client.json('game.tier-weights', { id: 'user-123' }, {});
+const all = await client.evaluateAll(['flag-a', 'flag-b'], { id: 'user-123' });
+
+// Track events for experimentation
+client.track('room.completed', 'user-123', { floor: 7, roomType: 'leak' });
+
+// Real-time flag changes
+client.onFlagChange('game.task-timer-seconds', (newVal, prev) => { /* ... */ });
+
+// Cleanup
+await client.flush();
+await client.close();
+```
+
+**Features:** zero dependencies, browser + Node.js, circuit breaker with automatic defaults fallback, SSE auto-reconnect with exponential backoff, event batching, tree-shakeable ESM + CJS builds.
+
+**Testing:** Use the mock client as a drop-in replacement:
+
+```typescript
+import { MystweaverMockClient } from '@mystweaver/sdk-js/mock';
+
+const client = new MystweaverMockClient({
+  flags: { 'game.task-timer-seconds': 8, 'powerups.jetpack-enabled': true },
+});
+client.override('game.task-timer-seconds', 5);
+client.simulateFlagChange('powerups.jetpack-enabled', false);
+expect(client.trackedEvents).toHaveLength(0);
+```
+
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
 | **Frontend** | React 18 + TypeScript + Vite + Tailwind CSS |
+| **SDK** | `@mystweaver/sdk-js` — zero-dependency JS/TS client (ESM + CJS) |
 | **Backend** | Node.js + Express + TypeScript |
 | **Database** | Google Cloud Firestore |
 | **Cache** | Cloud Memorystore (Redis 7) |
@@ -108,17 +154,14 @@ See [ROADMAP.md](ROADMAP.md) for the full engineering roadmap with milestones, d
 ### Prerequisites
 
 - **Node.js** >= 18.0.0
-- **Java 8+** (for Firestore emulator) or **Docker**
-- **gcloud CLI** (for Firestore emulator)
+- **Docker Desktop** (for Firestore emulator + Redis)
 
 ### Local Development
 
-You need three terminals:
-
-**Terminal 1 — Firestore emulator:**
+**Terminal 1 — Start infrastructure (Firestore emulator + Redis):**
 
 ```bash
-gcloud emulators firestore start --host-port=localhost:8080
+docker compose up -d
 ```
 
 **Terminal 2 — API server:**
@@ -137,7 +180,7 @@ $env:FIRESTORE_EMULATOR_HOST="localhost:8080"; npm run dev -w apps/api
 npm run dev -w apps/web
 ```
 
-**Terminal 4 — Seed test data (run once):**
+**Seed test data (run once, in a new terminal):**
 
 ```bash
 # macOS / Linux
@@ -149,7 +192,13 @@ $env:FIRESTORE_EMULATOR_HOST="localhost:8080"; npm run seed
 
 The admin UI will be at `http://localhost:5173` and the API at `http://localhost:3000`.
 
-The seed script populates 24 Room 404 flags, 2 experiment definitions, and a test SDK key.
+The seed script populates 24 Room 404 flags, 2 experiment definitions, and a test SDK key (printed once — save it).
+
+**Test the SDK against the local API:**
+
+```bash
+npx tsx scripts/test-sdk.ts <your-sdk-key>
+```
 
 ## Room 404 Integration
 
@@ -158,7 +207,7 @@ The seed script populates 24 Room 404 flags, 2 experiment definitions, and a tes
 | Milestone | Room 404 Capability | Requirement |
 |-----------|---------------------|-------------|
 | **Can start building** | SDK calls against local Mystweaver | Phase 1 (done) |
-| **Can run integration tests** | Automated tests with mock + real SDK | Phase 4 |
+| **Can run integration tests** | Automated tests with mock + real SDK | Phase 4 (done) |
 | **Live demo ready** | Full demo with admin UI + experiments | All phases |
 
 The seed script populates all 24 Room 404 flags covering rooms, powerups, game mechanics, AI behavior, and item tier weights. See [ROADMAP.md](ROADMAP.md#room-404-integration-contract) for the full flag contract.
@@ -184,9 +233,18 @@ mystweaver/
 │           ├── pages/       # Route pages
 │           └── types/       # Frontend types
 ├── packages/
-│   └── sdk-js/              # @mystweaver/sdk (Phase 4, not yet built)
+│   └── sdk-js/              # @mystweaver/sdk-js (JS/TS SDK)
+│       └── src/
+│           ├── client.ts    # MystweaverClient (evaluation, events, SSE)
+│           ├── mock.ts      # MystweaverMockClient (test double)
+│           ├── http.ts      # Fetch wrapper with timeout
+│           ├── circuit-breaker.ts  # Resilience (closed/open/half-open)
+│           ├── event-queue.ts      # Event batching + flush
+│           ├── sse.ts       # SSE manager with auto-reconnect
+│           └── types.ts     # SDK type definitions
 ├── scripts/
-│   └── seed-flags.ts        # Seed Room 404 flags + experiments
+│   ├── seed-flags.ts        # Seed Room 404 flags + experiments
+│   └── test-sdk.ts          # SDK integration smoke test
 ├── infra/
 │   ├── terraform/           # GCP infrastructure as code
 │   └── bootstrap.sh         # One-time GCP bootstrap script

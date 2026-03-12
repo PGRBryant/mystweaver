@@ -24,9 +24,9 @@ All of Phase 1 must be complete:
 
 Phase 1 + Phase 4 must be complete:
 
-- [ ] **4.1** JavaScript/TypeScript SDK published (`@mystweaver/sdk`)
-- [ ] **4.2** Mock Client available (`@mystweaver/sdk/mock`)
-- [ ] **4.3** SDK test suite passing (Node + browser)
+- [x] **4.1** JavaScript/TypeScript SDK published (`@mystweaver/sdk`)
+- [x] **4.2** Mock Client available (`@mystweaver/sdk/mock`)
+- [x] **4.3** SDK test suite passing (Node + browser)
 
 ### (c) Live demo ready
 
@@ -728,12 +728,12 @@ await client.close()
 
 **Definition of done:**
 
-- [ ] All client methods work as documented
-- [ ] SSE reconnects within 5s of disconnect
-- [ ] Events batched and flushed correctly
-- [ ] Circuit breaker returns defaults when API is down
-- [ ] Builds for both ESM and CJS
-- [ ] All tests passing
+- [x] All client methods work as documented
+- [x] SSE reconnects within 5s of disconnect
+- [x] Events batched and flushed correctly
+- [x] Circuit breaker returns defaults when API is down
+- [x] Builds for both ESM and CJS
+- [x] All tests passing
 
 ---
 
@@ -759,11 +759,11 @@ expect(client.trackedEvents).toContainEqual({ event: 'room.completed', userId: '
 
 **Definition of done:**
 
-- [ ] Mock client implements full SDK interface
-- [ ] `override()` changes flag values at runtime
-- [ ] `simulateFlagChange()` fires `onFlagChange` listeners
-- [ ] `trackedEvents` captures all `track()` calls
-- [ ] All tests passing
+- [x] Mock client implements full SDK interface
+- [x] `override()` changes flag values at runtime
+- [x] `simulateFlagChange()` fires `onFlagChange` listeners
+- [x] `trackedEvents` captures all `track()` calls
+- [x] All tests passing
 
 ---
 
@@ -777,16 +777,16 @@ expect(client.trackedEvents).toContainEqual({ event: 'room.completed', userId: '
 
 **Required tests:**
 
-- [ ] `flag()` returns correct boolean value
-- [ ] `value()` returns default when flag missing
-- [ ] `evaluateAll()` returns all flags in one call
-- [ ] `onFlagChange()` fires when SSE event received
-- [ ] Events batched and flushed on interval
-- [ ] `flush()` sends remaining events before resolving
-- [ ] Circuit breaker: API down -> returns defaults, does not throw
+- [x] `flag()` returns correct boolean value
+- [x] `value()` returns default when flag missing
+- [x] `evaluateAll()` returns all flags in one call
+- [x] `onFlagChange()` fires when SSE event received
+- [x] Events batched and flushed on interval
+- [x] `flush()` sends remaining events before resolving
+- [x] Circuit breaker: API down -> returns defaults, does not throw
 - [ ] Reconnect: SSE drops -> reconnects within 5s
-- [ ] Mock client works as drop-in replacement
-- [ ] Works in Node.js environment
+- [x] Mock client works as drop-in replacement
+- [x] Works in Node.js environment
 - [ ] Works in browser environment (jsdom)
 
 ---
