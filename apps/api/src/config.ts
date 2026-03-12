@@ -25,6 +25,13 @@ export const config = {
   redisHost: optional('REDIS_HOST', 'localhost'),
   redisPort: Number(optional('REDIS_PORT', '6379')),
 
+  // Pub/Sub
+  pubsubTopic: optional('PUBSUB_TOPIC', 'flag-updates'),
+  pubsubSubscription: optional('PUBSUB_SUBSCRIPTION', 'flag-updates-api'),
+
+  // Cache
+  cacheTtlSeconds: Number(optional('CACHE_TTL_SECONDS', '60')),
+
   // Secrets (from Secret Manager via Cloud Run)
   // Required in production; falls back to a dev-only dummy in local dev.
   apiSigningKey:
