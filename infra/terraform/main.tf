@@ -106,6 +106,33 @@ resource "google_project_iam_member" "api_trace" {
   member  = "serviceAccount:${google_service_account.api.email}"
 }
 
+resource "google_project_iam_member" "api_secrets" {
+  project = var.project_id
+  role    = "roles/secretmanager.secretAccessor"
+  member  = "serviceAccount:${google_service_account.api.email}"
+}
+
+# ── Secret Manager ──────────────────────────────────────────────────────────
+
+resource "google_secret_manager_secret" "api_signing_key" {
+  secret_id = "api-signing-key"
+
+  replication {
+    auto {}
+  }
+
+  depends_on = [google_project_service.apis]
+}
+
+resource "google_secret_manager_secret_version" "api_signing_key_initial" {
+  secret      = google_secret_manager_secret.api_signing_key.id
+  secret_data = "CHANGE_ME_ON_FIRST_DEPLOY"
+
+  lifecycle {
+    ignore_changes = [secret_data]
+  }
+}
+
 # ── Workload Identity Federation for GitHub Actions ──────────────────────────
 
 resource "google_iam_workload_identity_pool" "github" {
@@ -242,6 +269,15 @@ resource "google_cloud_run_v2_service" "api" {
         name  = "REDIS_PORT"
         value = tostring(google_redis_instance.cache.port)
       }
+      env {
+        name = "API_SIGNING_KEY"
+        value_source {
+          secret_key_ref {
+            secret  = google_secret_manager_secret.api_signing_key.secret_id
+            version = "latest"
+          }
+        }
+      }
 
       startup_probe {
         http_get {
@@ -274,5 +310,6 @@ resource "google_cloud_run_v2_service" "api" {
     google_project_service.apis,
     google_redis_instance.cache,
     google_vpc_access_connector.default,
+    google_secret_manager_secret_version.api_signing_key_initial,
   ]
 }
