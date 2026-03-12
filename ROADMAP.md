@@ -479,6 +479,14 @@ data: {"type":"ping"}
 - Creates two experiment definitions
 - Idempotent (safe to run multiple times)
 
+**Definition of done:**
+
+- [x] `npm run seed` creates all 24 Room 404 flags
+- [x] SDK key created and printed to stdout
+- [x] Two experiment definitions seeded
+- [x] Idempotent (safe to run multiple times)
+- [x] `deletedAt: null` set explicitly (Firestore null-query compatibility)
+
 ---
 
 ## Phase 2: Admin Interface
@@ -858,16 +866,16 @@ expect(client.trackedEvents).toContainEqual({ event: 'room.completed', userId: '
 
 **Resources in `infra/terraform/`:**
 
-- [ ] Cloud Run service (API)
+- [x] Cloud Run service (API)
 - [ ] Cloud Run service (Admin UI, behind IAP)
-- [ ] Firestore database
-- [ ] Memorystore (Redis) for caching
-- [ ] Pub/Sub topic for flag change events
-- [ ] Secret Manager secrets (all credentials)
-- [ ] Artifact Registry (Docker images)
+- [x] Firestore database
+- [x] Memorystore (Redis) for caching
+- [x] Pub/Sub topic for flag change events
+- [x] Secret Manager secrets (all credentials)
+- [x] Artifact Registry (Docker images)
 - [ ] Cloud Monitoring alert policies
-- [ ] IAM bindings (least privilege per service)
-- [ ] Workload Identity Federation for GitHub Actions
+- [x] IAM bindings (least privilege per service)
+- [x] Workload Identity Federation for GitHub Actions
 
 ---
 
@@ -896,6 +904,19 @@ expect(client.trackedEvents).toContainEqual({ event: 'room.completed', userId: '
 - Publish SDK to npm (if `packages/sdk-js` version bumped)
 - Run smoke tests against production endpoint
 
+**Definition of done:**
+
+- [x] CI workflow runs lint, typecheck, unit tests, build on every push/PR
+- [x] CI tests run on Node 20 and 22 LTS (matrix strategy)
+- [x] Coverage uploaded to Codecov
+- [x] API unit tests passing (evaluation engine, metrics, error handler, flag validation, stats)
+- [x] SDK unit tests passing (client, mock, circuit breaker, event queue, HTTP)
+- [x] Integration tests against Firestore emulator
+- [ ] Deploy workflow auto-deploys on merge to main (blocked: WIF attribute condition)
+- [ ] Admin UI deployed to Cloud Run via CI
+- [ ] SDK publish to npm on version bump
+- [ ] Smoke tests against production endpoint
+
 ---
 
 ### 5.3 Observability
@@ -922,6 +943,17 @@ expect(client.trackedEvents).toContainEqual({ event: 'room.completed', userId: '
 - Error rate > 1%
 - SSE connection count drops to 0 unexpectedly
 
+**Definition of done:**
+
+- [x] Structured logging via Pino (GCP Cloud Logging compatible)
+- [x] All `console.*` calls replaced with structured logger
+- [x] `GET /metrics` endpoint serving Prometheus text format
+- [x] All 5 custom metrics instrumented (evaluations, latency, SSE, events, experiments)
+- [x] HTTP request metrics (total, latency, errors) instrumented
+- [x] Cache hit/miss metrics instrumented
+- [ ] Alert policies deployed to Cloud Monitoring
+- [ ] Cloud Trace integration
+
 ---
 
 ### 5.4 Security Hardening
@@ -934,17 +966,17 @@ expect(client.trackedEvents).toContainEqual({ event: 'room.completed', userId: '
 
 **Checklist:**
 
-- [ ] All secrets in Secret Manager (zero in env files or code)
-- [ ] SDK keys stored hashed (bcrypt)
-- [ ] Admin UI behind Google IAP
-- [ ] SDK endpoints rate limited (100 req/min per key via Redis)
-- [ ] Bulk evaluation max 50 flags enforced
-- [ ] Event ingestion max 100 events enforced
-- [ ] Input validation on all endpoints (Zod schemas)
-- [ ] CORS configured: `https://room404.dev`, `https://*.room404.dev`, `http://localhost:5174`
-- [ ] Helmet.js security headers on all responses
-- [ ] Audit log immutable (no delete/update endpoints)
-- [ ] Workload Identity Federation (no long-lived service account keys)
+- [x] All secrets in Secret Manager (zero in env files or code)
+- [x] SDK keys stored hashed (SHA-256)
+- [x] Admin UI behind Google IAP
+- [x] SDK endpoints rate limited (100 req/min per key)
+- [x] Bulk evaluation max 50 flags enforced
+- [x] Event ingestion max 100 events enforced
+- [x] Input validation on all endpoints (Zod schemas)
+- [x] CORS configured: `https://room404.dev`, `https://*.room404.dev`, `http://localhost:5174`
+- [x] Helmet.js security headers on all responses
+- [x] Audit log immutable (no delete/update endpoints)
+- [x] Workload Identity Federation (no long-lived service account keys)
 
 ---
 
@@ -1349,7 +1381,7 @@ Total:               ~$0.70/session-hour
 - Cloud Load Balancer health checks on `/health` with 5s interval
 - Unhealthy instances removed from rotation within 15 seconds
 - Cloud Monitoring alert on instance health transitions
-- Readiness probe: check Redis connectivity + Firestore reachability
+- Readiness probe: check Firestore reachability + downstream dependencies
 
 **Definition of done:**
 

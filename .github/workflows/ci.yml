@@ -146,6 +146,36 @@ jobs:
           flags: unittests
           fail_ci_if_error: false
 
+  # ── Integration tests (Firestore emulator) ──────────────────────────────────
+  integration:
+    runs-on: ubuntu-latest
+    name: Integration Tests
+    needs: install
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Restore node_modules
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules
+            apps/*/node_modules
+            packages/*/node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          fail-on-cache-miss: true
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - run: npm run test:integration
+
   # ── Build ─────────────────────────────────────────────────────────────────────
   build:
     runs-on: ubuntu-latest
