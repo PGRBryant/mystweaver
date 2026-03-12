@@ -15,13 +15,16 @@ A production-ready alternative to LaunchDarkly, built for teams that want full c
 
 ## Development Status
 
-| Phase       | Description                                                                                   | Status                 |
-| ----------- | --------------------------------------------------------------------------------------------- | ---------------------- |
-| **Phase 1** | Foundation — SDK key management, flag CRUD, evaluation engine, SSE streaming, event ingestion | **Complete**           |
-| **Phase 2** | Admin Interface — authentication, flag management UI, audit log                               | **Complete**           |
-| **Phase 3** | Experimentation — A/B testing, statistical results engine, live results UI                    | **Complete**           |
-| **Phase 4** | SDK Package — `@mystweaver/sdk-js` for JS/TS (browser + Node)                                 | **Complete**           |
-| **Phase 5** | Production Readiness — Terraform, CI/CD, observability, security hardening                    | Partial (infra exists) |
+| Phase       | Description                                                                                          | Status                 |
+| ----------- | ---------------------------------------------------------------------------------------------------- | ---------------------- |
+| **Phase 1** | Foundation — SDK key management, flag CRUD, evaluation engine, SSE streaming, event ingestion        | **Complete**           |
+| **Phase 2** | Admin Interface — authentication, flag management UI, audit log                                      | **Complete**           |
+| **Phase 3** | Experimentation — A/B testing, statistical results engine, live results UI                           | **Complete**           |
+| **Phase 4** | SDK Package — `@mystweaver/sdk-js` for JS/TS (browser + Node)                                        | **Complete**           |
+| **Phase 5** | Production Readiness — Terraform, CI/CD, observability, security hardening                           | Partial (infra exists) |
+| **Phase 6** | Scale & Efficiency — local SDK evaluation, Redis elimination, session lifecycle, near-zero idle cost | Not started            |
+| **Phase 7** | Event Pipeline — Go ingestion service, BigQuery analytics, pre-aggregated results                    | Not started            |
+| **Phase 8** | Global Reach — multi-region sync, stale-while-revalidate, flag versioning                            | Not started            |
 
 See [ROADMAP.md](ROADMAP.md) for the full engineering roadmap with milestones, dependency graph, and definition of done for each item.
 

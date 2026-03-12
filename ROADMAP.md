@@ -2,6 +2,11 @@
 
 This document defines the complete engineering roadmap for MystWeaver, sequenced so that [Room 404](https://github.com/PGRBRyant/room-404) (a multiplayer browser game) can consume MystWeaver as its feature flag and experimentation backend.
 
+**Target scale:** 500+ concurrent Room 404 players, primarily US-based with global reach.
+**Platform:** GCP-native (all services on Google Cloud Platform).
+**Languages:** TypeScript (API, SDK, admin UI), Go (event pipeline), Rust (WASM evaluation core — future).
+**Cost model:** Near-zero idle cost between game sessions; pay only during active play.
+
 ---
 
 ## Room 404 Integration Readiness
@@ -30,11 +35,20 @@ Phase 1 + Phase 4 must be complete:
 
 ### (c) Live demo ready
 
-All phases complete:
+Phases 1–5 complete:
 
-- [ ] **Phase 2** — Admin UI with auth, flag management, audit log
-- [ ] **Phase 3** — Experimentation engine with live results UI
+- [x] **Phase 2** — Admin UI with auth, flag management, audit log
+- [x] **Phase 3** — Experimentation engine with live results UI
 - [ ] **Phase 5** — Production infrastructure, CI/CD, observability, security
+
+### (d) Room 404 can handle 500+ concurrent players at near-zero idle cost
+
+Phases 6–7 complete:
+
+- [ ] **6.4** — Local evaluation in SDK (zero-latency flag checks)
+- [ ] **6.6** — Redis eliminated (no always-on infrastructure)
+- [ ] **6.7** — Session lifecycle (scale to zero between sessions, ~$0.02/mo idle)
+- [ ] **Phase 7** — Event pipeline (Go ingestion service, BigQuery analytics)
 
 ---
 
@@ -67,6 +81,24 @@ graph TD
     M5_3[5.3 Observability]
     M5_4[5.4 Security Hardening]
 
+    M6_1[6.1 Min Instances]
+    M6_2[6.2 Connection Autoscaling]
+    M6_3[6.3 Global Load Balancing]
+    M6_4[6.4 Local Evaluation SDK]
+    M6_5[6.5 Composite Flag Documents]
+    M6_6[6.6 Eliminate Redis]
+    M6_7[6.7 Session Lifecycle]
+
+    M7_1[7.1 Event Ingest - Go]
+    M7_2[7.2 BigQuery Event Storage]
+    M7_3[7.3 Pre-aggregated Results]
+    M7_4[7.4 Event Export API]
+
+    M8_1[8.1 Multi-region Flag Sync]
+    M8_2[8.2 SDK Stale-while-revalidate]
+    M8_3[8.3 Health-aware Routing]
+    M8_4[8.4 Flag Versioning & Rollback]
+
     M1_1 --> M1_2
     M1_2 --> M1_3
     M1_3 --> M1_4
@@ -97,6 +129,27 @@ graph TD
     M5_1 --> M5_2
     M5_1 --> M5_3
     M5_1 --> M5_4
+
+    M5_1 --> M6_1
+    M5_3 --> M6_2
+    M5_1 --> M6_3
+    M4_1 --> M6_4
+    M6_5 --> M6_4
+    M5_1 --> M6_5
+    M6_4 --> M6_6
+    M6_4 --> M6_7
+    M6_5 --> M6_7
+    M6_6 --> M6_7
+
+    M5_1 --> M7_1
+    M7_1 --> M7_2
+    M7_2 --> M7_3
+    M7_2 --> M7_4
+
+    M6_3 --> M8_1
+    M6_4 --> M8_2
+    M6_3 --> M8_3
+    M5_1 --> M8_4
 ```
 
 ---
@@ -895,6 +948,442 @@ expect(client.trackedEvents).toContainEqual({ event: 'room.completed', userId: '
 
 ---
 
+## Phase 6: Scale-Ready Infrastructure
+
+> **Goal**: Handle 500+ concurrent SSE connections with low latency, near-zero idle cost between sessions. The key architectural shift is moving flag evaluation from server-side API calls to client-side local evaluation in the SDK — the pattern used by LaunchDarkly and all production feature flag services at scale. Combined with session lifecycle management, this eliminates the need for always-on infrastructure.
+
+### 6.1 Cloud Run Min-Instances
+
+|                  |                                         |
+| ---------------- | --------------------------------------- |
+| **Goal**         | Eliminate cold starts for SDK endpoints |
+| **Complexity**   | S                                       |
+| **Dependencies** | 5.1 (Terraform infrastructure)          |
+
+**Deliverables:**
+
+- Configure Cloud Run `min-instances: 1` for the API service (Terraform)
+- Set `max-instances: 10` with CPU-based autoscaling
+- Startup probe on `/health` to ensure readiness before traffic
+
+**Definition of done:**
+
+- [ ] Cold start latency eliminated (p99 < 100ms for first request)
+- [ ] Terraform plan shows correct min/max instance configuration
+- [ ] Health check passes within 5s of instance start
+
+---
+
+### 6.2 Connection-Aware Autoscaling
+
+|                  |                                                                       |
+| ---------------- | --------------------------------------------------------------------- |
+| **Goal**         | Scale Cloud Run instances based on SSE connection count, not just CPU |
+| **Complexity**   | M                                                                     |
+| **Dependencies** | 5.3 (custom metrics must be exported to Cloud Monitoring)             |
+
+**Deliverables:**
+
+- Export `sse_connections_active` gauge to Cloud Monitoring via OpenTelemetry Collector sidecar or the Ops Agent
+- Custom autoscaling policy: scale up when `sse_connections_active > 200` per instance
+- Cloud Monitoring dashboard for connection count, CPU, memory per instance
+
+**Definition of done:**
+
+- [ ] `sse_connections_active` metric visible in Cloud Monitoring
+- [ ] Autoscaling triggers at 200 connections per instance
+- [ ] Dashboard deployed with connection, CPU, and memory panels
+
+---
+
+### 6.3 Global Load Balancing
+
+|                  |                                                                 |
+| ---------------- | --------------------------------------------------------------- |
+| **Goal**         | Low-latency routing for US-primary traffic with global fallback |
+| **Complexity**   | M                                                               |
+| **Dependencies** | 5.1 (Terraform infrastructure)                                  |
+
+**Deliverables:**
+
+- Cloud Load Balancing (external Application LB) in front of Cloud Run
+- CDN enabled for `GET /sdk/flags` (flag snapshot endpoint, 30s TTL)
+- SSL certificate via Google-managed certificate for `api.mystweaver.dev`
+- Cloud Armor WAF policy (rate limiting, geo-blocking if needed)
+
+**Definition of done:**
+
+- [ ] All SDK traffic routes through Cloud Load Balancing
+- [ ] Flag snapshot endpoint cached at CDN edge
+- [ ] HTTPS with valid certificate on custom domain
+- [ ] Terraform resources for LB, CDN, SSL, Cloud Armor
+
+---
+
+### 6.4 Local Evaluation in SDK
+
+|                  |                                                                             |
+| ---------------- | --------------------------------------------------------------------------- |
+| **Goal**         | SDK evaluates flags locally using downloaded ruleset — zero network latency |
+| **Complexity**   | XL                                                                          |
+| **Dependencies** | 4.1 (SDK client), 6.5 (composite flag documents for efficient download)     |
+
+This is the highest-impact change in the entire roadmap. Today the SDK calls `POST /sdk/evaluate` for every flag check (network round-trip). After this milestone, the SDK downloads the full flag configuration once, evaluates locally, and uses SSE only for change notifications.
+
+**Today's flow:**
+
+```
+Game Client → SDK → HTTP POST /sdk/evaluate → API → Redis/Firestore → Response
+                     (per flag, per check, network round-trip every time)
+```
+
+**After 6.4:**
+
+```
+Game Client → SDK (local eval, ~0ms)
+                ↑
+        SSE stream (flag config updates, real-time)
+                ↑
+        CDN-cached GET /sdk/flags (initial load, 1 request)
+```
+
+**Deliverables:**
+
+- New API endpoint: `GET /sdk/flags` — returns full flag ruleset for the project (JSON, CDN-cacheable)
+- Port `evaluateFlag()` logic to the SDK (`packages/sdk-js/src/evaluator.ts`)
+- SDK fetches flag config on init, evaluates all flags locally
+- SSE stream delivers config diffs; SDK applies them and re-evaluates affected flags
+- Fallback: if flag config download fails, fall back to `POST /sdk/evaluate` (current behavior)
+- The existing `flag()`, `value()`, `json()`, `evaluateAll()` API remains identical — this is a transparent optimization
+
+**Definition of done:**
+
+- [ ] `GET /sdk/flags` returns complete flag ruleset
+- [ ] SDK evaluates flags locally with identical results to server
+- [ ] SSE updates trigger local re-evaluation
+- [ ] Fallback to server evaluation when config unavailable
+- [ ] Evaluation latency < 1ms (local) vs ~50-100ms (network)
+- [ ] All existing SDK tests still pass
+- [ ] New tests for local evaluation parity
+
+---
+
+### 6.5 Composite Flag Documents
+
+|                  |                                                                     |
+| ---------------- | ------------------------------------------------------------------- |
+| **Goal**         | Reduce Firestore reads by bundling all flags into a single document |
+| **Complexity**   | M                                                                   |
+| **Dependencies** | 5.1 (Terraform infrastructure)                                      |
+
+**Problem:** Today, evaluating N flags requires N Firestore reads (even with Redis cache, cold cache is expensive). The SSE stream uses `onSnapshot` on the entire collection, which is efficient, but the evaluate endpoint is not.
+
+**Deliverables:**
+
+- Composite document at `projects/{projectId}/config/flags` containing all flag definitions
+- Updated on every flag mutation (atomic write alongside the individual flag doc)
+- `GET /sdk/flags` reads this single document (1 Firestore read instead of N)
+- Individual flag documents retained for admin UI CRUD (no breaking changes)
+
+**Definition of done:**
+
+- [ ] Composite document created and updated on every flag mutation
+- [ ] `GET /sdk/flags` returns full config from single document
+- [ ] Firestore reads for SDK endpoints reduced to 1 per request
+- [ ] Admin CRUD still works against individual flag documents
+
+---
+
+### 6.6 Eliminate Redis Dependency
+
+|                  |                                                                             |
+| ---------------- | --------------------------------------------------------------------------- |
+| **Goal**         | Remove Memorystore (Redis) — the only always-on billable service ($35/mo)   |
+| **Complexity**   | M                                                                           |
+| **Dependencies** | 6.4 (local evaluation makes server-side cache unnecessary for SDK hot path) |
+
+**Problem:** Memorystore (Redis) cannot scale to zero. It costs ~$35/mo whether anyone is playing or not. Once the SDK evaluates locally (6.4), Redis is only used as a server-side cache for the `/sdk/evaluate` fallback path and admin CRUD reads. Neither justifies always-on infrastructure.
+
+**Deliverables:**
+
+- Remove Redis from the evaluation hot path (replaced by local SDK evaluation)
+- For admin CRUD: Firestore is fast enough without a cache layer (admin traffic is low-volume)
+- For server-side evaluate fallback: use in-memory LRU cache (per-instance, no external dependency)
+- Remove Memorystore from Terraform; delete `apps/api/src/db/redis.ts`
+- Remove `ioredis` dependency from `apps/api/package.json`
+
+**Cost impact:** $35/mo → $0/mo for caching infrastructure.
+
+**Definition of done:**
+
+- [ ] Redis removed from all code and infrastructure
+- [ ] In-memory LRU cache handles server-side evaluate fallback
+- [ ] Admin CRUD reads directly from Firestore (no cache layer)
+- [ ] No regression in evaluation correctness
+- [ ] Memorystore removed from Terraform
+
+---
+
+### 6.7 Session Lifecycle Management
+
+|                  |                                                                           |
+| ---------------- | ------------------------------------------------------------------------- |
+| **Goal**         | Near-zero GCP cost between game sessions; fast boot when a session starts |
+| **Complexity**   | L                                                                         |
+| **Dependencies** | 6.4 (local evaluation), 6.5 (composite docs), 6.6 (no Redis)              |
+
+**Problem:** Room 404 runs in sessions — a game night, a tournament, a demo. Between sessions, there's no traffic, but infrastructure may still be running and billing. After eliminating Redis (6.6), the remaining services are all pay-per-use, but we need to orchestrate the transition cleanly.
+
+**Idle state (between sessions):**
+
+```
+Cloud Run API:       scaled to zero ($0)
+Cloud Run Admin UI:  scaled to zero ($0)
+Firestore:           dormant, pay-per-read ($0.01/mo for admin checks)
+Pub/Sub:             no messages ($0)
+BigQuery:            no queries ($0)
+Cloud CDN:           cached flag config ($0.01/mo)
+Total:               ~$0.02/mo
+```
+
+**Active state (during session):**
+
+```
+Cloud Run API:       1-3 instances (~$0.50/hr)
+Firestore:           active reads/writes (~$0.10/session)
+Pub/Sub:             event messages (~$0.01/session)
+BigQuery:            streaming inserts + queries (~$0.05/session)
+Cloud CDN:           flag config serving (~$0.01/session)
+Total:               ~$0.70/session-hour
+```
+
+**Deliverables:**
+
+- Cloud Run `min-instances: 0` for both API and admin UI (scale to zero when idle)
+- Session warm-up endpoint: `POST /api/session/start` — pre-loads flag config, warms Firestore connections
+- Session wind-down endpoint: `POST /api/session/stop` — flushes pending events, publishes final metrics
+- CLI script `scripts/session-start.sh` / `scripts/session-stop.sh` for manual session management
+- Cloud Scheduler optional: auto-stop sessions after N hours of inactivity
+- Health dashboard: "session active" indicator in admin UI
+
+**Definition of done:**
+
+- [ ] GCP cost < $0.10/mo when no sessions are active
+- [ ] Session boot time < 30 seconds (first flag evaluation)
+- [ ] Graceful shutdown flushes all pending events
+- [ ] Admin UI shows session status
+- [ ] Automated inactivity timeout (configurable, default 2 hours)
+
+---
+
+## Phase 7: Event Pipeline & Analytics
+
+> **Goal**: Replace fire-and-forget Firestore writes with a real event pipeline. At 500 concurrent players generating events, Firestore batch writes become expensive and the `computeResults()` full-scan becomes slow. This phase introduces Go for the ingestion service — purpose-built for high-throughput network I/O with minimal memory.
+
+### 7.1 Pub/Sub Event Ingestion
+
+|                  |                                                                                |
+| ---------------- | ------------------------------------------------------------------------------ |
+| **Goal**         | Decouple event ingestion from storage — HTTP response is not blocked by writes |
+| **Complexity**   | M                                                                              |
+| **Dependencies** | 5.1 (Pub/Sub topic already exists)                                             |
+| **Language**     | Go (new `services/event-ingest/` service)                                      |
+
+**Why Go:** The event ingestion service is a high-fan-in network service — many concurrent SDK clients pushing events. Go's goroutine model handles thousands of concurrent connections with minimal memory (~4KB per goroutine vs ~1MB per Node.js connection). This service has no shared state with the TypeScript API and can be deployed as a separate Cloud Run service.
+
+**Deliverables:**
+
+- New Go service at `services/event-ingest/` — receives `POST /sdk/events`, publishes to Pub/Sub
+- `POST /sdk/events` on the existing TypeScript API proxies to the Go service (or SDK points directly)
+- Events include projectId, SDK key metadata, server-side timestamp
+- Pub/Sub provides at-least-once delivery, backpressure handling, and retry
+- Separate Cloud Run service with independent scaling (scale to zero when no events)
+
+**Definition of done:**
+
+- [ ] Go event ingestion service deployed to Cloud Run
+- [ ] Events published to Pub/Sub topic on ingestion
+- [ ] HTTP response returns immediately (< 10ms)
+- [ ] No direct Firestore writes from the events endpoint
+- [ ] Pub/Sub dead letter topic for failed deliveries
+- [ ] Memory usage < 50MB at 500 concurrent connections
+
+---
+
+### 7.2 BigQuery Event Storage
+
+|                  |                                                                      |
+| ---------------- | -------------------------------------------------------------------- |
+| **Goal**         | Store events in BigQuery for efficient analytics and experimentation |
+| **Complexity**   | L                                                                    |
+| **Dependencies** | 7.1 (events must flow through Pub/Sub)                               |
+
+**Deliverables:**
+
+- BigQuery dataset `mystweaver.events` with tables: `flag_evaluated`, `metric_tracked`
+- Pub/Sub → BigQuery subscription (native BigQuery subscription, no custom code)
+- Partitioned by `ingestedAt` (day), clustered by `projectId`, `flagKey`
+- Retention policy: 90 days (configurable)
+
+**Definition of done:**
+
+- [ ] Events flow from Pub/Sub to BigQuery automatically
+- [ ] Query 1M events in < 5 seconds
+- [ ] Terraform resources for BigQuery dataset, tables, Pub/Sub subscription
+- [ ] Data available within 30 seconds of ingestion
+
+---
+
+### 7.3 Pre-aggregated Experiment Results
+
+|                  |                                                                     |
+| ---------------- | ------------------------------------------------------------------- |
+| **Goal**         | Experiment results computed incrementally, not from full event scan |
+| **Complexity**   | L                                                                   |
+| **Dependencies** | 7.2 (events in BigQuery)                                            |
+
+**Problem:** Today, `computeResults()` scans up to 10,000 event documents per query. At 500 concurrent users, experiments generate millions of events. Scanning on every results request becomes a bottleneck.
+
+**Deliverables:**
+
+- Scheduled BigQuery query (Cloud Scheduler → Cloud Functions) that computes per-variant aggregates every 60 seconds
+- Results stored in Firestore at `projects/{projectId}/experiments/{experimentId}/results`
+- `GET /api/experiments/:id/results` reads pre-computed results (1 Firestore read)
+- On-demand recompute endpoint for admin UI "refresh" button
+
+**Definition of done:**
+
+- [ ] Results computed every 60 seconds during active experiments
+- [ ] Results endpoint returns in < 50ms (single Firestore read)
+- [ ] Statistical accuracy matches current on-demand computation
+- [ ] Cloud Scheduler + Cloud Functions infrastructure in Terraform
+
+---
+
+### 7.4 Event Export API
+
+|                  |                                                     |
+| ---------------- | --------------------------------------------------- |
+| **Goal**         | Allow downstream consumers to access raw event data |
+| **Complexity**   | M                                                   |
+| **Dependencies** | 7.2 (events in BigQuery)                            |
+
+**Deliverables:**
+
+- `GET /api/events/export` — export events as CSV or JSON (admin auth required)
+- Filter by: date range, event type, flag key, experiment ID
+- BigQuery export to Cloud Storage for large datasets
+- Webhook integration: push events to external URL (Slack, Datadog, custom)
+
+**Definition of done:**
+
+- [ ] CSV/JSON export working for up to 100K events
+- [ ] Cloud Storage export for larger datasets
+- [ ] Webhook delivery with retry and dead letter
+- [ ] Rate limited to prevent BigQuery abuse
+
+---
+
+## Phase 8: Global Reach & Reliability
+
+> **Goal**: Production-grade availability for global players. <250ms p99 for non-US players, graceful degradation during outages, and the ability to roll back flag changes safely.
+
+### 8.1 Multi-Region Flag Sync
+
+|                  |                                                                      |
+| ---------------- | -------------------------------------------------------------------- |
+| **Goal**         | Distribute flag configuration to edge regions for low-latency access |
+| **Complexity**   | L                                                                    |
+| **Dependencies** | 6.3 (global load balancing)                                          |
+
+**Deliverables:**
+
+- Flag config snapshots replicated to Cloud Storage buckets in `us-central1`, `europe-west1`, `asia-east1`
+- Cloud CDN serves flag snapshots from nearest edge location
+- Pub/Sub triggers replication on flag change (< 5 second propagation)
+- SDK fetches from nearest CDN edge, falls back to direct API
+
+**Definition of done:**
+
+- [ ] Flag config available from 3 regions
+- [ ] Propagation latency < 5 seconds on flag change
+- [ ] CDN cache hit ratio > 95% for flag config requests
+- [ ] Terraform resources for multi-region storage and CDN
+
+---
+
+### 8.2 SDK Stale-While-Revalidate
+
+|                  |                                                                       |
+| ---------------- | --------------------------------------------------------------------- |
+| **Goal**         | SDK continues evaluating flags during API outages using cached config |
+| **Complexity**   | M                                                                     |
+| **Dependencies** | 6.4 (local evaluation in SDK)                                         |
+
+**Deliverables:**
+
+- SDK persists flag config to `localStorage` (browser) or filesystem (Node.js)
+- On startup: load persisted config immediately, start async revalidation
+- If API unreachable: use persisted config indefinitely (stale-while-revalidate)
+- Config includes version hash — SDK only downloads when config actually changed (ETag / If-None-Match)
+
+**Definition of done:**
+
+- [ ] SDK boots in < 10ms using persisted config
+- [ ] API outage does not affect flag evaluation
+- [ ] Config persistence works in browser and Node.js
+- [ ] ETag-based conditional fetching reduces bandwidth
+
+---
+
+### 8.3 Health-Aware Routing
+
+|                  |                                            |
+| ---------------- | ------------------------------------------ |
+| **Goal**         | Automatic failover for unhealthy instances |
+| **Complexity**   | M                                          |
+| **Dependencies** | 6.3 (global load balancing)                |
+
+**Deliverables:**
+
+- Cloud Load Balancer health checks on `/health` with 5s interval
+- Unhealthy instances removed from rotation within 15 seconds
+- Cloud Monitoring alert on instance health transitions
+- Readiness probe: check Redis connectivity + Firestore reachability
+
+**Definition of done:**
+
+- [ ] Unhealthy instances receive no traffic within 15 seconds
+- [ ] Health endpoint checks downstream dependencies
+- [ ] Alert fires on health state transitions
+- [ ] Zero-downtime deploys verified with load test
+
+---
+
+### 8.4 Flag Versioning & Rollback
+
+|                  |                                                              |
+| ---------------- | ------------------------------------------------------------ |
+| **Goal**         | Every flag change creates a version; instant rollback to any |
+| **Complexity**   | L                                                            |
+| **Dependencies** | 5.1 (Terraform infrastructure)                               |
+
+**Deliverables:**
+
+- Every flag mutation writes a version document to `projects/{projectId}/flags/{flagKey}/versions/{version}`
+- Version includes full flag state, timestamp, author, change reason
+- `POST /api/flags/:key/rollback/:version` — restore flag to a previous version
+- Admin UI: version history timeline on flag detail page, one-click rollback
+
+**Definition of done:**
+
+- [ ] Every flag mutation creates a version record
+- [ ] Rollback restores exact previous state
+- [ ] Rollback creates its own audit record
+- [ ] Admin UI shows version timeline with diff view
+
+---
+
 ## Room 404 Integration Contract
 
 ### Flags
@@ -977,12 +1466,13 @@ The project board uses four columns:
 
 | Label                 | Description                          |
 | --------------------- | ------------------------------------ |
-| `phase:1` - `phase:5` | Which phase the milestone belongs to |
+| `phase:1` - `phase:8` | Which phase the milestone belongs to |
 | `api`                 | Backend API work                     |
 | `ui`                  | Frontend/admin UI work               |
 | `sdk`                 | SDK package work                     |
 | `infra`               | Terraform, CI/CD, GCP infrastructure |
 | `testing`             | Test suite work                      |
+| `scale`               | Performance and scaling work         |
 | `blocker:room404`     | Blocks Room 404 integration          |
 
 ### Issues (one per milestone)
@@ -1009,3 +1499,18 @@ The project board uses four columns:
 | #18   | CI/CD (GitHub Actions)          | `phase:5`, `infra`, `testing`                  |
 | #19   | Observability                   | `phase:5`, `infra`                             |
 | #20   | Security Hardening              | `phase:5`, `infra`, `api`                      |
+| #21   | Cloud Run Min-Instances         | `phase:6`, `infra`, `scale`                    |
+| #22   | Connection-Aware Autoscaling    | `phase:6`, `infra`, `scale`                    |
+| #23   | Global Load Balancing           | `phase:6`, `infra`, `scale`                    |
+| #24   | Local Evaluation in SDK         | `phase:6`, `sdk`, `scale`, `blocker:room404`   |
+| #25   | Composite Flag Documents        | `phase:6`, `api`, `scale`                      |
+| #26   | Eliminate Redis                 | `phase:6`, `api`, `infra`, `scale`             |
+| #27   | Session Lifecycle Management    | `phase:6`, `infra`, `scale`, `blocker:room404` |
+| #28   | Event Ingestion Service (Go)    | `phase:7`, `api`, `scale`                      |
+| #29   | BigQuery Event Storage          | `phase:7`, `infra`, `scale`                    |
+| #30   | Pre-aggregated Results          | `phase:7`, `api`, `scale`                      |
+| #31   | Event Export API                | `phase:7`, `api`                               |
+| #32   | Multi-Region Flag Sync          | `phase:8`, `infra`, `scale`                    |
+| #33   | SDK Stale-While-Revalidate      | `phase:8`, `sdk`, `scale`                      |
+| #34   | Health-Aware Routing            | `phase:8`, `infra`, `scale`                    |
+| #35   | Flag Versioning & Rollback      | `phase:8`, `api`, `ui`                         |
