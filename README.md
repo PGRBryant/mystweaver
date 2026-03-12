@@ -17,192 +17,188 @@ A production-ready alternative to LaunchDarkly, built for teams that want full c
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| **Phase 1** | Foundation — SDK key management, flag CRUD, evaluation, SSE, events | **Not started** |
-| **Phase 2** | Admin Interface — auth, flag management UI, audit log | Not started |
-| **Phase 3** | Experimentation — A/B testing, statistical results engine | Not started |
+| **Phase 1** | Foundation — SDK key management, flag CRUD, evaluation engine, SSE streaming, event ingestion | **Complete** |
+| **Phase 2** | Admin Interface — authentication, flag management UI, audit log | **Complete** |
+| **Phase 3** | Experimentation — A/B testing, statistical results engine, live results UI | **Complete** |
 | **Phase 4** | SDK Package — `@mystweaver/sdk` for JS/TS (browser + Node) | Not started |
-| **Phase 5** | Production Readiness — Terraform, CI/CD, observability, security | Partial (scaffold exists) |
+| **Phase 5** | Production Readiness — Terraform, CI/CD, observability, security hardening | Partial (infra exists) |
 
 See [ROADMAP.md](ROADMAP.md) for the full engineering roadmap with milestones, dependency graph, and definition of done for each item.
 
-## Overview
+## What's Working
 
-Mystweaver is a self-hosted feature flag and experimentation platform designed for development teams who need:
+### Backend API
 
-- **Full control** over flag data and infrastructure
-- **Real-time flag updates** via Server-Sent Events
-- **A/B experimentation** with statistical significance testing
-- **Multiple SDKs** for JavaScript/TypeScript (browser + Node.js)
-- **Easy deployment** to GCP Cloud Run
-- **Google IAP integration** for secure admin UI access
-- **Comprehensive observability** with Cloud Logging and Monitoring
+**Admin routes** (authenticated via Google IAP in production, dev bypass locally):
 
-### Why Mystweaver?
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/flags` | Create a flag |
+| `GET` | `/api/flags` | List all flags |
+| `GET` | `/api/flags/:key` | Get a single flag |
+| `PUT` | `/api/flags/:key` | Full update |
+| `PATCH` | `/api/flags/:key` | Partial update (toggle, rename, etc.) |
+| `DELETE` | `/api/flags/:key` | Soft delete |
+| `POST` | `/api/sdk-keys` | Create an SDK key |
+| `GET` | `/api/sdk-keys` | List SDK keys (metadata only) |
+| `DELETE` | `/api/sdk-keys/:id` | Revoke an SDK key |
+| `GET` | `/api/audit` | Query audit log (filter by flag, action, user) |
+| `GET` | `/api/audit/export` | Export audit log as CSV |
+| `POST` | `/api/experiments` | Create an experiment |
+| `GET` | `/api/experiments` | List experiments |
+| `GET` | `/api/experiments/:id` | Get experiment detail |
+| `PATCH` | `/api/experiments/:id` | Update a draft experiment |
+| `DELETE` | `/api/experiments/:id` | Delete a draft experiment |
+| `POST` | `/api/experiments/:id/start` | Start experiment (modifies flag rules) |
+| `POST` | `/api/experiments/:id/stop` | Stop experiment (reverts flag) |
+| `POST` | `/api/experiments/:id/conclude` | Declare winner (promotes variant value) |
+| `GET` | `/api/experiments/:id/results` | Compute statistical results |
+| `GET` | `/api/auth/me` | Get current user email |
 
-- **Open Source** — No vendor lock-in, community-driven development
-- **Scalable** — Redis caching, real-time SSE streaming, Cloud Trace integration
-- **Secure** — Google IAP for admin access, hashed SDK keys, rate limiting
-- **Developer-Friendly** — Local development with Docker Compose, mock SDK client for testing
-- **Cost-Effective** — Pay only for the infrastructure you use on GCP
+**SDK routes** (authenticated via `Authorization: Bearer <sdk-key>`):
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/sdk/evaluate` | Evaluate a single flag |
+| `POST` | `/sdk/evaluate/bulk` | Evaluate up to 50 flags |
+| `GET` | `/sdk/stream` | SSE stream of real-time flag updates |
+| `POST` | `/sdk/events` | Ingest evaluation and metric events |
+
+### Admin UI
+
+- **Flag list** — Search by key/name, filter by status/type/tag, inline enable/disable toggle
+- **Flag editor** — Edit name, description, default value, tags, targeting rules with rollout percentages
+- **Evaluation preview** — Input a user context and see the evaluation result live
+- **Audit log** — Filterable history of every flag mutation with before/after diffs, CSV export
+- **Experiments** — Create, start, stop, conclude experiments with live results dashboard
+- **Results dashboard** — Sample size bars, metric comparison table, p-value with plain English explanation, "declare winner" flow
+
+### Evaluation Engine
+
+- Rules evaluated top-to-bottom, first match wins
+- Conditions AND'd within a rule (operators: `eq`, `neq`, `gt`, `lt`, `gte`, `lte`, `in`, `contains`)
+- Deterministic percentage rollouts via SHA-256 hash
+- Redis read-through cache with Pub/Sub invalidation
+
+### Experimentation
+
+- Start an experiment to split traffic by variant weights (modifies flag targeting rules)
+- Stop to revert to pre-experiment state
+- Conclude to promote winning variant's value as the flag default
+- Welch's t-test for statistical significance (p < 0.05)
+- Results computed on demand from ingested evaluation + metric events
 
 ## Tech Stack
 
-| Layer | Technology | Notes |
-|-------|-----------|-------|
-| **Frontend** | React 18 + TypeScript + Vite + Tailwind CSS | Modern, fast, type-safe |
-| **Backend** | Node.js + Express + TypeScript | Lightweight and performant |
-| **Database** | Firestore | Serverless, auto-scaling |
-| **Cache** | Cloud Memorystore (Redis) | Sub-millisecond flag lookups |
-| **Streaming** | Server-Sent Events (SSE) | Real-time flag updates to clients |
-| **Observability** | Logging, Monitoring, Cloud Trace | Built-in GCP integration |
-| **Hosting** | Cloud Run | Serverless, pay-as-you-go |
-| **IaC** | Terraform | Reproducible infrastructure |
-| **CI/CD** | GitHub Actions + Workload Identity | Secure, keyless deployment |
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | React 18 + TypeScript + Vite + Tailwind CSS |
+| **Backend** | Node.js + Express + TypeScript |
+| **Database** | Google Cloud Firestore |
+| **Cache** | Cloud Memorystore (Redis 7) |
+| **Streaming** | Server-Sent Events (SSE) |
+| **Auth** | Google IAP (production), dev bypass (local) |
+| **Eventing** | Cloud Pub/Sub |
+| **Hosting** | Cloud Run |
+| **IaC** | Terraform |
+| **CI/CD** | GitHub Actions + Workload Identity Federation |
 
 ## Quick Start
 
 ### Prerequisites
 
 - **Node.js** >= 18.0.0
-- **Docker** and **Docker Compose** (for local development)
-- **GCP Project** (for deployment only)
+- **Java 8+** (for Firestore emulator) or **Docker**
+- **gcloud CLI** (for Firestore emulator)
 
 ### Local Development
 
+You need three terminals:
+
+**Terminal 1 — Firestore emulator:**
+
 ```bash
-# Clone the repository
-git clone https://github.com/PGRBRyant/mystweaver.git
-cd mystweaver
-
-# Install dependencies
-npm install
-
-# Start Firestore emulator + Redis
-docker-compose up -d
-
-# Seed the Room 404 flag set and create a test SDK key
-npm run seed
-
-# Start the API server (with Firestore emulator)
-FIRESTORE_EMULATOR_HOST=localhost:8080 npm run dev --workspace=@mystweaver/api
-
-# In another terminal, start the Web UI
-npm run dev --workspace=@mystweaver/web
+gcloud emulators firestore start --host-port=localhost:8080
 ```
 
-> **Windows (PowerShell):** Replace the `FIRESTORE_EMULATOR_HOST=...` line with:
-> ```powershell
-> $env:FIRESTORE_EMULATOR_HOST="localhost:8080"; npm run dev --workspace=@mystweaver/api
-> ```
+**Terminal 2 — API server:**
 
-The admin UI will be available at `http://localhost:5173` and the API at `http://localhost:3000`.
+```bash
+# macOS / Linux
+FIRESTORE_EMULATOR_HOST=localhost:8080 npm run dev -w apps/api
 
-### SDK Usage
-
-```typescript
-import { MystWeaverClient } from '@mystweaver/sdk';
-
-const client = new MystWeaverClient({
-  apiKey: 'mw_sdk_live_...',
-  baseUrl: 'http://localhost:3000',
-  streaming: true,
-});
-
-// Evaluate a single flag
-const timerSeconds = await client.value('game.task-timer-seconds', userContext, 8);
-
-// Evaluate all flags at once
-const flags = await client.evaluateAll([
-  'game.task-timer-seconds',
-  'powerups.jetpack-enabled',
-], userContext);
-
-// Track events for experimentation
-client.track('room.completed', userId, { roomType: 'leak', floor: 7 });
-
-// Listen for real-time flag changes
-client.onFlagChange('game.task-timer-seconds', (newValue) => {
-  updateGameTimer(newValue);
-});
-
-// Cleanup
-await client.flush();
-await client.close();
+# Windows (PowerShell)
+$env:FIRESTORE_EMULATOR_HOST="localhost:8080"; npm run dev -w apps/api
 ```
 
-### Testing with the Mock Client
+**Terminal 3 — Web UI:**
 
-```typescript
-import { MystWeaverMockClient } from '@mystweaver/sdk/mock';
-
-const client = new MystWeaverMockClient({
-  flags: {
-    'game.task-timer-seconds': 8,
-    'powerups.jetpack-enabled': true,
-  },
-});
-
-// Override at runtime
-client.override('game.task-timer-seconds', 5);
-
-// Assert tracked events
-expect(client.trackedEvents).toContainEqual({
-  event: 'room.completed',
-  userId: 'plr_123',
-});
+```bash
+npm run dev -w apps/web
 ```
+
+**Terminal 4 — Seed test data (run once):**
+
+```bash
+# macOS / Linux
+FIRESTORE_EMULATOR_HOST=localhost:8080 npm run seed
+
+# Windows (PowerShell)
+$env:FIRESTORE_EMULATOR_HOST="localhost:8080"; npm run seed
+```
+
+The admin UI will be at `http://localhost:5173` and the API at `http://localhost:3000`.
+
+The seed script populates 24 Room 404 flags, 2 experiment definitions, and a test SDK key.
 
 ## Room 404 Integration
 
-[Room 404](https://github.com/PGRBRyant/room-404) is a multiplayer browser game that consumes MystWeaver as its feature flag and experimentation backend. This integration drives the roadmap priorities.
+[Room 404](https://github.com/PGRBRyant/room-404) is a multiplayer browser game that uses Mystweaver as its feature flag and experimentation backend. This integration drives roadmap priorities.
 
-### Integration Milestones
+| Milestone | Room 404 Capability | Requirement |
+|-----------|---------------------|-------------|
+| **Can start building** | SDK calls against local Mystweaver | Phase 1 (done) |
+| **Can run integration tests** | Automated tests with mock + real SDK | Phase 4 |
+| **Live demo ready** | Full demo with admin UI + experiments | All phases |
 
-| Milestone | Room 404 Capability | MystWeaver Requirement |
-|-----------|---------------------|----------------------|
-| **Room 404 can start building** | SDK calls against local MystWeaver | Phase 1 complete |
-| **Room 404 can run integration tests** | Automated tests with mock + real SDK | Phase 1 + Phase 4 complete |
-| **Live demo ready** | Full demo with admin UI + experiments | All phases complete |
-
-### Flag Contract
-
-MystWeaver seeds 24 flags for Room 404 covering rooms, powerups, game mechanics, AI behavior, and tier weights. Run `npm run seed` to populate them in your local emulator. See [ROADMAP.md](ROADMAP.md#room-404-integration-contract) for the full flag list.
-
-### CORS
-
-MystWeaver is configured to accept requests from:
-
-- `https://room404.dev`
-- `https://*.room404.dev`
-- `http://localhost:5174` (Room 404 local dev)
+The seed script populates all 24 Room 404 flags covering rooms, powerups, game mechanics, AI behavior, and item tier weights. See [ROADMAP.md](ROADMAP.md#room-404-integration-contract) for the full flag contract.
 
 ## Project Structure
 
 ```
 mystweaver/
 ├── apps/
-│   ├── api/                 # Express backend server
+│   ├── api/                 # Express API server
 │   │   └── src/
+│   │       ├── db/          # Firestore, Redis, Pub/Sub clients
+│   │       ├── middleware/  # Auth, validation, error handling
+│   │       ├── routes/      # REST endpoints
+│   │       ├── services/    # Business logic
+│   │       ├── types/       # TypeScript types
+│   │       └── __tests__/   # Unit tests
 │   └── web/                 # React admin UI
 │       └── src/
+│           ├── api/         # API client
+│           ├── components/  # Reusable UI components
+│           ├── hooks/       # React hooks
+│           ├── pages/       # Route pages
+│           └── types/       # Frontend types
 ├── packages/
-│   └── sdk-js/              # @mystweaver/sdk (JS/TS)
-│       └── src/
+│   └── sdk-js/              # @mystweaver/sdk (Phase 4, not yet built)
 ├── scripts/
-│   └── seed-flags.ts        # Seed Room 404 flags into emulator
+│   └── seed-flags.ts        # Seed Room 404 flags + experiments
 ├── infra/
-│   └── terraform/           # GCP infrastructure as code
+│   ├── terraform/           # GCP infrastructure as code
+│   └── bootstrap.sh         # One-time GCP bootstrap script
 ├── .github/
 │   └── workflows/           # CI + deploy pipelines
-├── docker-compose.yml       # Local dev (Firestore emulator + Redis)
+├── docker-compose.yml       # Local dev services
 ├── Dockerfile               # Production image
 ├── ROADMAP.md               # Full engineering roadmap
 └── package.json             # Monorepo root
 ```
 
-## Development
-
-### Commands
+## Commands
 
 ```bash
 npm install                  # Install all dependencies
@@ -218,16 +214,7 @@ npm run clean                # Clean build artifacts
 
 ## Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for:
-- Code of Conduct
-- Development Setup
-- Commit Message Guidelines
-- PR Process
-
-## Support
-
-- **Issues**: [GitHub Issues](https://github.com/PGRBRyant/mystweaver/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/PGRBRyant/mystweaver/discussions)
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, commit guidelines, and PR process.
 
 ## License
 
