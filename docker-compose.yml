@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Local development environment: Firestore emulator + Redis + API server
 # Usage:
 #   docker-compose up -d            # start background services only

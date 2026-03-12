@@ -3,13 +3,18 @@
   "version": "0.1.0",
   "description": "JavaScript/TypeScript SDK for Mystweaver",
   "main": "dist/index.js",
-  "module": "dist/index.esm.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.esm.js",
+      "import": "./dist/index.mjs",
       "require": "./dist/index.js"
+    },
+    "./mock": {
+      "types": "./dist/mock.d.ts",
+      "import": "./dist/mock.mjs",
+      "require": "./dist/mock.js"
     }
   },
   "files": [
