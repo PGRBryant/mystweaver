@@ -144,7 +144,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup.
 ## Features (Roadmap)
 
 - [x] Project structure and tooling
-- [ ] Core flag evaluation engine
+- [x] Core flag evaluation engine
+- [x] Terraform infrastructure modules
+- [x] GitHub Actions CI/CD setup
 - [ ] Admin UI (flag creation, management, targeting)
 - [ ] JavaScript/TypeScript SDK
 - [ ] Python SDK
@@ -155,8 +157,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup.
 - [ ] A/B testing capabilities
 - [ ] Usage analytics
 - [ ] Integration tests and E2E tests
-- [ ] Terraform infrastructure modules
-- [ ] GitHub Actions CI/CD setup
 
 ## Development
 
