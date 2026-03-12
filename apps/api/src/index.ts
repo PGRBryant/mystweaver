@@ -1,4 +1,7 @@
 import express from 'express';
+import helmet from 'helmet';
+import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import { config } from './config';
 import flagsRouter from './routes/flags';
 import sdkKeysRouter from './routes/sdk-keys';
@@ -14,7 +17,37 @@ import { closeRedis } from './db/redis';
 
 const app = express();
 
-app.use(express.json());
+// ── Security headers ────────────────────────────────────────────────────
+app.use(helmet());
+
+// ── CORS ────────────────────────────────────────────────────────────────
+app.use(
+  cors({
+    origin: config.corsOrigins,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+    maxAge: 86400, // 24h preflight cache
+  }),
+);
+
+// ── Body parsing with size limits ───────────────────────────────────────
+app.use(express.json({ limit: '1mb' }));
+
+// ── Rate limiting for SDK endpoints ─────────────────────────────────────
+const sdkRateLimit = rateLimit({
+  windowMs: 60_000, // 1 minute
+  limit: 100, // 100 requests per minute per key
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    // Rate limit per SDK key (from Authorization header)
+    const auth = req.headers.authorization;
+    if (auth?.startsWith('Bearer ')) return auth.slice(7);
+    return req.ip ?? 'unknown';
+  },
+  message: { error: 'Rate limit exceeded. Max 100 requests per minute per SDK key.' },
+});
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -30,10 +63,10 @@ app.get('/api/auth/me', adminAuth, (req, res) => {
   res.json({ email: req.user?.email ?? null });
 });
 
-// ── SDK routes (Bearer auth) ────────────────────────────────────────────
-app.use('/sdk/evaluate', evaluateRouter);
-app.use('/sdk/stream', streamRouter);
-app.use('/sdk/events', eventsRouter);
+// ── SDK routes (Bearer auth + rate limiting) ────────────────────────────
+app.use('/sdk/evaluate', sdkRateLimit, evaluateRouter);
+app.use('/sdk/stream', streamRouter); // SSE not rate limited (long-lived)
+app.use('/sdk/events', sdkRateLimit, eventsRouter);
 
 // ── Monitoring ──────────────────────────────────────────────────────────
 app.use('/api/stream', streamRouter);

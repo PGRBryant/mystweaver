@@ -32,6 +32,19 @@ export const config = {
   // Cache
   cacheTtlSeconds: Number(optional('CACHE_TTL_SECONDS', '60')),
 
+  // CORS
+  corsOrigins: optional('CORS_ORIGINS', 'http://localhost:5173,http://localhost:5174')
+    .split(',')
+    .map((s) => s.trim())
+    .reduce<(string | RegExp)[]>((acc, origin) => {
+      if (origin.includes('*')) {
+        acc.push(new RegExp('^' + origin.replace(/\./g, '\\.').replace('*', '[a-z0-9-]+') + '$'));
+      } else {
+        acc.push(origin);
+      }
+      return acc;
+    }, []),
+
   // Secrets (from Secret Manager via Cloud Run)
   // Required in production; falls back to a dev-only dummy in local dev.
   apiSigningKey:
