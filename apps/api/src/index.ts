@@ -3,6 +3,8 @@ import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import { config } from './config';
+import { logger } from './logger';
+import { collectMetrics, metrics } from './metrics';
 import flagsRouter from './routes/flags';
 import sdkKeysRouter from './routes/sdk-keys';
 import auditRouter from './routes/audit';
@@ -33,6 +35,33 @@ app.use(
 
 // ── Body parsing with size limits ───────────────────────────────────────
 app.use(express.json({ limit: '1mb' }));
+
+// ── Request logging & metrics ─────────────────────────────────────────
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    metrics.httpRequestsTotal.inc({
+      method: req.method,
+      path: req.route?.path ?? req.path,
+      status: String(res.statusCode),
+    });
+    metrics.httpRequestLatency.observe(
+      { method: req.method, path: req.route?.path ?? req.path },
+      duration,
+    );
+    logger.info(
+      {
+        method: req.method,
+        path: req.originalUrl,
+        status: res.statusCode,
+        durationMs: duration,
+      },
+      'request',
+    );
+  });
+  next();
+});
 
 // ── Rate limiting for SDK endpoints ─────────────────────────────────────
 const sdkRateLimit = rateLimit({
@@ -71,14 +100,20 @@ app.use('/sdk/events', sdkRateLimit, eventsRouter);
 // ── Monitoring ──────────────────────────────────────────────────────────
 app.use('/api/stream', streamRouter);
 
+app.get('/metrics', (_req, res) => {
+  res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
+  res.send(collectMetrics());
+});
+
 app.use(errorHandler);
 
 const server = app.listen(config.port, () => {
-  console.log(`[mystweaver-api] listening on port ${config.port}`);
+  logger.info({ port: config.port, env: config.nodeEnv }, 'Mystweaver API started');
   startSubscription().catch(() => {});
 });
 
 process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down');
   stopSubscription()
     .then(() => closeRedis())
     .then(() => server.close(() => process.exit(0)))

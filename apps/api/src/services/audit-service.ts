@@ -1,5 +1,6 @@
 import { FieldValue, Query } from '@google-cloud/firestore';
 import { auditCollection } from '../db/firestore';
+import { logger } from '../logger';
 import type { AuditAction, AuditRecord } from '../types/audit';
 
 interface WriteAuditParams {
@@ -28,7 +29,10 @@ export async function writeAuditRecord(params: WriteAuditParams): Promise<void> 
       performedAt: FieldValue.serverTimestamp(),
     });
   } catch (err) {
-    console.error('[audit] failed to write audit record', err);
+    logger.error(
+      { err, action: params.action, flagKey: params.flagKey },
+      'Failed to write audit record',
+    );
   }
 }
 

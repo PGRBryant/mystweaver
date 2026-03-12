@@ -1,6 +1,7 @@
 import { getRedis } from '../db/redis';
 import { flagsCollection } from '../db/firestore';
 import { config } from '../config';
+import { metrics } from '../metrics';
 import type { FlagDocument } from '../types/flag';
 
 function cacheKey(projectId: string, flagKey: string): string {
@@ -14,11 +15,16 @@ export async function getCachedFlag(projectId: string, key: string): Promise<Fla
   if (redis) {
     try {
       const cached = await redis.get(cacheKey(projectId, key));
-      if (cached) return JSON.parse(cached) as FlagDocument;
+      if (cached) {
+        metrics.cacheHitsTotal.inc();
+        return JSON.parse(cached) as FlagDocument;
+      }
     } catch {
       // Cache read failed — fall through to Firestore.
     }
   }
+
+  metrics.cacheMissesTotal.inc();
 
   // Cache miss — read from Firestore.
   const doc = await flagsCollection(projectId).doc(key).get();

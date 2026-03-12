@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { sdkAuth } from '../middleware/api-key-auth';
 import { validateBody } from '../middleware/validate';
 import { eventsCollection } from '../db/firestore';
+import { logger } from '../logger';
+import { metrics } from '../metrics';
 import type { EventIngestionRequest, SDKEvent } from '../types/api';
 
 const router = Router();
@@ -16,9 +18,14 @@ router.post('/', sdkAuth, validateBody({ events: 'array' }), (req, res) => {
   const dropped = Math.max(events.length - MAX_EVENTS, 0);
   const toWrite = events.slice(0, MAX_EVENTS);
 
+  metrics.eventsIngestedTotal.inc({ status: 'accepted' }, accepted);
+  if (dropped > 0) {
+    metrics.eventsIngestedTotal.inc({ status: 'dropped' }, dropped);
+  }
+
   // Fire-and-forget: write to Firestore async, respond immediately.
   writeEvents(projectId, toWrite).catch((err) => {
-    console.error('[events] async write failed:', err);
+    logger.error({ err, projectId, count: toWrite.length }, 'Async event write failed');
   });
 
   res.json({ accepted, dropped });

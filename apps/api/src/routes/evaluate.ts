@@ -4,6 +4,7 @@ import { validateBody } from '../middleware/validate';
 import { getCachedFlag } from '../services/cache-service';
 import { evaluateFlag } from '../services/evaluation-engine';
 import { AppError } from '../middleware/error-handler';
+import { metrics } from '../metrics';
 import type { EvaluateRequest, BulkEvaluateRequest } from '../types/api';
 
 const router = Router();
@@ -17,10 +18,15 @@ router.post(
   validateBody({ flagKey: 'string', userContext: 'object' }),
   async (req, res, next) => {
     try {
+      const start = Date.now();
       const { flagKey, userContext } = req.body as EvaluateRequest;
       const projectId = req.sdkProjectId!;
       const flag = await getCachedFlag(projectId, flagKey);
       const result = evaluateFlag(flag, flagKey, userContext);
+
+      metrics.flagEvaluationsTotal.inc({ flagKey, reason: result.reason });
+      metrics.flagEvaluationLatency.observe({ route: 'single' }, Date.now() - start);
+
       res.json(result);
     } catch (err) {
       next(err);
@@ -58,7 +64,10 @@ router.post(
         const flag = flagMap.get(key) ?? null;
         const result = evaluateFlag(flag, key, userContext);
         flags[key] = { value: result.value, reason: result.reason, enabled: result.enabled };
+        metrics.flagEvaluationsTotal.inc({ flagKey: key, reason: result.reason });
       }
+
+      metrics.flagEvaluationLatency.observe({ route: 'bulk' }, Date.now() - start);
 
       res.json({
         flags,

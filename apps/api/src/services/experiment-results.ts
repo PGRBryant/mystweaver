@@ -1,5 +1,6 @@
 import { eventsCollection, experimentsCollection } from '../db/firestore';
 import { AppError } from '../middleware/error-handler';
+import { metrics as appMetrics } from '../metrics';
 import type { ExperimentDocument, ExperimentResults, VariantResult } from '../types/experiment';
 
 // ── Statistics helpers ───────────────────────────────────────────────────
@@ -177,6 +178,7 @@ export async function computeResults(
     }
 
     variantResults[v.key] = { sampleSize, conversionRate, mean, stdDev };
+    appMetrics.experimentSampleSize.set({ experimentId, variant: v.key }, sampleSize);
     variantKeys.push(v.key);
   }
 

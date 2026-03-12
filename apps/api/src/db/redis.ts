@@ -1,5 +1,6 @@
 import Redis from 'ioredis';
 import { config } from '../config';
+import { logger } from '../logger';
 
 let redis: Redis | null = null;
 
@@ -13,7 +14,7 @@ export function getRedis(): Redis | null {
       lazyConnect: true,
     });
     redis.on('error', (err) => {
-      console.warn('[redis] connection error, disabling cache:', err.message);
+      logger.warn({ err: err.message }, 'Redis connection error, disabling cache');
       redis?.disconnect();
       redis = null;
     });

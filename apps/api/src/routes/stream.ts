@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { sdkAuth } from '../middleware/api-key-auth';
 import { flagsCollection } from '../db/firestore';
+import { logger } from '../logger';
+import { metrics } from '../metrics';
 import type { FlagDocument } from '../types/flag';
 
 const router = Router();
@@ -21,6 +23,9 @@ router.get('/', sdkAuth, (req, res) => {
   res.flushHeaders();
 
   activeConnections++;
+  metrics.sseConnectionsActive.inc();
+  metrics.sseConnectionsTotal.inc();
+  logger.info({ projectId }, 'SSE connection opened');
 
   // Firestore onSnapshot listener for real-time flag changes.
   const unsubscribe = flagsCollection(projectId)
@@ -62,7 +67,7 @@ router.get('/', sdkAuth, (req, res) => {
         }
       },
       (err) => {
-        console.error('[sse] Firestore listener error:', err.message);
+        logger.error({ err: err.message, projectId }, 'SSE Firestore listener error');
         res.end();
       },
     );
@@ -75,6 +80,8 @@ router.get('/', sdkAuth, (req, res) => {
   // Clean up on disconnect.
   req.on('close', () => {
     activeConnections--;
+    metrics.sseConnectionsActive.dec();
+    logger.info({ projectId }, 'SSE connection closed');
     unsubscribe();
     clearInterval(pingInterval);
   });

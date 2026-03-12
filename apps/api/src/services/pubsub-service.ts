@@ -1,5 +1,6 @@
 import { flagUpdatesTopic, pubsub } from '../db/pubsub';
 import { config } from '../config';
+import { logger } from '../logger';
 import { invalidateFlag } from './cache-service';
 import type { Subscription } from '@google-cloud/pubsub';
 
@@ -21,7 +22,7 @@ export async function publishFlagChange(
       json: { projectId: projectId ?? '', flagKey, action } satisfies FlagChangeMessage,
     });
   } catch (err) {
-    console.warn('[pubsub] failed to publish flag change:', err);
+    logger.warn({ err, flagKey, action }, 'Failed to publish flag change');
   }
 }
 
@@ -45,12 +46,12 @@ export async function startSubscription(): Promise<void> {
     });
 
     sub.on('error', (err) => {
-      console.warn('[pubsub] subscription error:', err.message);
+      logger.warn({ err: err.message }, 'Pub/Sub subscription error');
     });
 
-    console.log(`[pubsub] listening on subscription "${subName}"`);
+    logger.info({ subscription: subName }, 'Pub/Sub subscription started');
   } catch (err) {
-    console.warn('[pubsub] could not start subscription (non-fatal):', err);
+    logger.warn({ err }, 'Could not start Pub/Sub subscription (non-fatal)');
   }
 }
 
