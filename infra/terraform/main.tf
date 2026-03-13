@@ -234,7 +234,7 @@ resource "google_cloud_run_v2_service" "api" {
     }
 
     scaling {
-      min_instance_count = 0
+      min_instance_count = 1
       max_instance_count = 10
     }
 
@@ -268,6 +268,10 @@ resource "google_cloud_run_v2_service" "api" {
       env {
         name  = "REDIS_PORT"
         value = tostring(google_redis_instance.cache.port)
+      }
+      env {
+        name  = "CORS_ORIGINS"
+        value = "https://${var.domain},https://room404.dev,https://*.room404.dev,http://localhost:5173,http://localhost:5174"
       }
       env {
         name = "API_SIGNING_KEY"
@@ -325,6 +329,7 @@ resource "google_service_account" "web" {
 resource "google_cloud_run_v2_service" "web" {
   name     = "mystweaver-web"
   location = var.region
+  ingress  = "INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"
 
   template {
     service_account = google_service_account.web.email
@@ -345,7 +350,7 @@ resource "google_cloud_run_v2_service" "web" {
       resources {
         limits = {
           cpu    = "1"
-          memory = "256Mi"
+          memory = "512Mi"
         }
       }
 
@@ -383,6 +388,16 @@ resource "google_cloud_run_v2_service" "web" {
 # GCP console the first time. Terraform can manage the IAP backend binding
 # once the brand exists. For now, restrict access via IAM on the Cloud Run
 # service invoker role — only authenticated users with the role can reach it.
+
+# Allow unauthenticated access to the API — the app handles its own auth
+# (SDK key Bearer tokens for SDK endpoints, IAP for admin endpoints).
+resource "google_cloud_run_v2_service_iam_member" "api_noauth" {
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.api.name
+  role     = "roles/run.invoker"
+  member   = "allUsers"
+}
 
 resource "google_cloud_run_v2_service_iam_member" "web_noauth" {
   project  = var.project_id
@@ -472,34 +487,30 @@ resource "google_monitoring_alert_policy" "api_error_rate" {
 }
 
 # Alert: SSE connection count drops to 0 unexpectedly
-# Uses the custom sse_connections_active Prometheus metric exported by the API.
-resource "google_monitoring_alert_policy" "sse_connections_drop" {
-  display_name = "Mystweaver SSE connections dropped to 0"
-  combiner     = "OR"
-
-  conditions {
-    display_name = "SSE active connections == 0"
-
-    condition_threshold {
-      filter          = "resource.type = \"cloud_run_revision\" AND resource.labels.service_name = \"mystweaver-api\" AND metric.type = \"custom.googleapis.com/sse_connections_active\""
-      comparison      = "COMPARISON_LT"
-      threshold_value = 1
-      duration        = "600s"
-
-      aggregations {
-        alignment_period     = "300s"
-        per_series_aligner   = "ALIGN_MEAN"
-        cross_series_reducer = "REDUCE_SUM"
-        group_by_fields      = ["resource.labels.service_name"]
-      }
-    }
-  }
-
-  notification_channels = [google_monitoring_notification_channel.email.id]
-
-  alert_strategy {
-    auto_close = "1800s"
-  }
-
-  depends_on = [google_project_service.apis]
-}
+# TODO(V2): Uncomment once sse_connections_active is exported to Cloud Monitoring
+# via OpenTelemetry sidecar. The metric currently only exists in Prometheus format
+# at /metrics and Cloud Monitoring rejects alert policies referencing unknown metrics.
+#
+# resource "google_monitoring_alert_policy" "sse_connections_drop" {
+#   display_name = "Mystweaver SSE connections dropped to 0"
+#   combiner     = "OR"
+#
+#   conditions {
+#     display_name = "SSE active connections == 0"
+#     condition_threshold {
+#       filter          = "resource.type = \"cloud_run_revision\" AND resource.labels.service_name = \"mystweaver-api\" AND metric.type = \"custom.googleapis.com/sse_connections_active\""
+#       comparison      = "COMPARISON_LT"
+#       threshold_value = 1
+#       duration        = "600s"
+#       aggregations {
+#         alignment_period     = "300s"
+#         per_series_aligner   = "ALIGN_MEAN"
+#         cross_series_reducer = "REDUCE_SUM"
+#         group_by_fields      = ["resource.labels.service_name"]
+#       }
+#     }
+#   }
+#   notification_channels = [google_monitoring_notification_channel.email.id]
+#   alert_strategy { auto_close = "1800s" }
+#   depends_on = [google_project_service.apis]
+# }

@@ -12,3 +12,9 @@ redis_memory_size_gb = 1
 
 # Monitoring
 alert_email = "you@example.com"
+
+# Load Balancer + IAP
+domain                  = "mystweaver.dev"
+iap_oauth_client_id     = "your-oauth-client-id.apps.googleusercontent.com"
+iap_oauth_client_secret = "your-oauth-client-secret"
+iap_members             = ["user:you@gmail.com"]

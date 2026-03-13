@@ -47,3 +47,25 @@ variable "alert_email" {
   description = "Email address for Cloud Monitoring alert notifications"
   type        = string
 }
+
+variable "domain" {
+  description = "Domain name for the load balancer SSL certificate"
+  type        = string
+}
+
+variable "iap_oauth_client_id" {
+  description = "OAuth 2.0 client ID for IAP (created in GCP Console)"
+  type        = string
+  sensitive   = true
+}
+
+variable "iap_oauth_client_secret" {
+  description = "OAuth 2.0 client secret for IAP (created in GCP Console)"
+  type        = string
+  sensitive   = true
+}
+
+variable "iap_members" {
+  description = "IAM members allowed through IAP (e.g., [\"user:you@gmail.com\"])"
+  type        = list(string)
+}

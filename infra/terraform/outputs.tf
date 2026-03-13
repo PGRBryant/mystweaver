@@ -32,3 +32,13 @@ output "web_service_url" {
   description = "Public URL of the deployed Cloud Run Admin UI service"
   value       = google_cloud_run_v2_service.web.uri
 }
+
+output "load_balancer_ip" {
+  description = "Static IP of the HTTPS load balancer — point DNS A record here"
+  value       = google_compute_global_address.default.address
+}
+
+output "app_url" {
+  description = "Public URL of Mystweaver (via load balancer)"
+  value       = "https://${var.domain}"
+}
