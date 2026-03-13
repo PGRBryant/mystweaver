@@ -24,18 +24,46 @@ const userContextSchema = z.object({
   attributes: z.record(z.string(), z.unknown()),
 });
 
+// ── Type–value validation ────────────────────────────────────────────────
+
+/** Check whether a value matches a declared flag type. */
+export function matchesFlagType(type: string, value: unknown): boolean {
+  switch (type) {
+    case 'boolean':
+      return typeof value === 'boolean';
+    case 'string':
+      return typeof value === 'string';
+    case 'number':
+      return typeof value === 'number' && Number.isFinite(value);
+    case 'json':
+      return value !== null && typeof value === 'object';
+    default:
+      return false;
+  }
+}
+
 // ── Flags ───────────────────────────────────────────────────────────────
 
-export const createFlagSchema = z.object({
-  key: z.string().min(2).max(100),
-  name: z.string().min(1).max(200),
-  description: z.string().max(1000).optional(),
-  type: flagTypeSchema,
-  defaultValue: z.unknown(),
-  enabled: z.boolean().optional(),
-  rules: z.array(targetingRuleSchema).optional(),
-  tags: z.array(z.string().max(50)).max(20).optional(),
-});
+export const createFlagSchema = z
+  .object({
+    key: z.string().min(2).max(100),
+    name: z.string().min(1).max(200),
+    description: z.string().max(1000).optional(),
+    type: flagTypeSchema,
+    defaultValue: z.unknown(),
+    enabled: z.boolean().optional(),
+    rules: z.array(targetingRuleSchema).optional(),
+    tags: z.array(z.string().max(50)).max(20).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (!matchesFlagType(data.type, data.defaultValue)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['defaultValue'],
+        message: `defaultValue must be a ${data.type}`,
+      });
+    }
+  });
 
 export const updateFlagSchema = z.object({
   name: z.string().min(1).max(200).optional(),

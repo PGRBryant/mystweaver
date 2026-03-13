@@ -241,7 +241,7 @@ projects/{projectId}/flags/{flagKey}
 
 - [x] CRUD operations persist correctly to Firestore under `projects/{projectId}/flags/`
 - [x] Flag key unique per project; collision returns 409
-- [ ] Type validation: value must match declared `type`
+- [x] Type validation: value must match declared `type`
 - [x] Soft delete hides flag from evaluation but retains audit record
 - [x] Invalid flag key format returns 400
 - [x] All tests passing

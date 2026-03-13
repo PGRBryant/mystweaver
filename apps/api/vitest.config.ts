@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
+    exclude: ['node_modules', 'dist', 'src/__integration__'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

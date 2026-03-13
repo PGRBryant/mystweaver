@@ -135,6 +135,21 @@ describe('flag-service (integration)', () => {
     expect(fetched!.enabled).toBe(false);
   });
 
+  it('rejects defaultValue type mismatch on update', async () => {
+    await createFlag(pid, { key: 'typed-flag', name: 'Typed', type: 'boolean', defaultValue: true });
+
+    await expect(
+      updateFlag(pid, 'typed-flag', { defaultValue: 'not-a-bool' }),
+    ).rejects.toThrow('defaultValue must be a boolean');
+  });
+
+  it('accepts matching defaultValue type on update', async () => {
+    await createFlag(pid, { key: 'num-flag', name: 'Num', type: 'number', defaultValue: 10 });
+
+    const updated = await updateFlag(pid, 'num-flag', { defaultValue: 42 });
+    expect(updated.defaultValue).toBe(42);
+  });
+
   it('rejects update to non-existent flag', async () => {
     await expect(updateFlag(pid, 'ghost', { name: 'Nope' })).rejects.toThrow('not found');
   });

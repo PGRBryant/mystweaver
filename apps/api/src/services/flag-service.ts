@@ -4,6 +4,7 @@ import { invalidateFlag } from './cache-service';
 import { publishFlagChange } from './pubsub-service';
 import { writeAuditRecord } from './audit-service';
 import { AppError } from '../middleware/error-handler';
+import { matchesFlagType } from '../schemas';
 import type { FlagDocument } from '../types/flag';
 import type { CreateFlagRequest, UpdateFlagRequest } from '../types/api';
 
@@ -112,6 +113,10 @@ export async function updateFlag(
   const existingData = existing.data() as FlagDocument;
   if (existingData.deletedAt) {
     throw new AppError(`Flag "${key}" not found`, 404);
+  }
+
+  if (data.defaultValue !== undefined && !matchesFlagType(existingData.type, data.defaultValue)) {
+    throw new AppError(`defaultValue must be a ${existingData.type}`, 400);
   }
 
   const before = toPlain(existing.data() as Record<string, unknown>);

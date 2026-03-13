@@ -9,6 +9,7 @@ import {
   createExperimentSchema,
   updateExperimentSchema,
   concludeExperimentSchema,
+  matchesFlagType,
 } from '../schemas';
 
 describe('createFlagSchema', () => {
@@ -98,6 +99,137 @@ describe('createFlagSchema', () => {
       ],
     });
     expect(result.success).toBe(false);
+  });
+
+  it('rejects defaultValue that does not match type (string for boolean flag)', () => {
+    const result = createFlagSchema.safeParse({
+      key: 'ab',
+      name: 'X',
+      type: 'boolean',
+      defaultValue: 'not-a-bool',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects defaultValue that does not match type (boolean for number flag)', () => {
+    const result = createFlagSchema.safeParse({
+      key: 'ab',
+      name: 'X',
+      type: 'number',
+      defaultValue: true,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects defaultValue that does not match type (number for string flag)', () => {
+    const result = createFlagSchema.safeParse({
+      key: 'ab',
+      name: 'X',
+      type: 'string',
+      defaultValue: 42,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects defaultValue that does not match type (string for json flag)', () => {
+    const result = createFlagSchema.safeParse({
+      key: 'ab',
+      name: 'X',
+      type: 'json',
+      defaultValue: 'not-json',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts json flag with object defaultValue', () => {
+    const result = createFlagSchema.safeParse({
+      key: 'ab',
+      name: 'X',
+      type: 'json',
+      defaultValue: { theme: 'dark', fontSize: 14 },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts json flag with array defaultValue', () => {
+    const result = createFlagSchema.safeParse({
+      key: 'ab',
+      name: 'X',
+      type: 'json',
+      defaultValue: [1, 2, 3],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects NaN for number flag', () => {
+    const result = createFlagSchema.safeParse({
+      key: 'ab',
+      name: 'X',
+      type: 'number',
+      defaultValue: NaN,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects null for json flag', () => {
+    const result = createFlagSchema.safeParse({
+      key: 'ab',
+      name: 'X',
+      type: 'json',
+      defaultValue: null,
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('matchesFlagType', () => {
+  it('boolean accepts true/false', () => {
+    expect(matchesFlagType('boolean', true)).toBe(true);
+    expect(matchesFlagType('boolean', false)).toBe(true);
+  });
+
+  it('boolean rejects non-booleans', () => {
+    expect(matchesFlagType('boolean', 'yes')).toBe(false);
+    expect(matchesFlagType('boolean', 1)).toBe(false);
+    expect(matchesFlagType('boolean', null)).toBe(false);
+  });
+
+  it('string accepts strings', () => {
+    expect(matchesFlagType('string', 'hello')).toBe(true);
+    expect(matchesFlagType('string', '')).toBe(true);
+  });
+
+  it('string rejects non-strings', () => {
+    expect(matchesFlagType('string', 42)).toBe(false);
+    expect(matchesFlagType('string', true)).toBe(false);
+  });
+
+  it('number accepts finite numbers', () => {
+    expect(matchesFlagType('number', 42)).toBe(true);
+    expect(matchesFlagType('number', 0)).toBe(true);
+    expect(matchesFlagType('number', -3.14)).toBe(true);
+  });
+
+  it('number rejects NaN and Infinity', () => {
+    expect(matchesFlagType('number', NaN)).toBe(false);
+    expect(matchesFlagType('number', Infinity)).toBe(false);
+    expect(matchesFlagType('number', -Infinity)).toBe(false);
+  });
+
+  it('json accepts objects and arrays', () => {
+    expect(matchesFlagType('json', { a: 1 })).toBe(true);
+    expect(matchesFlagType('json', [1, 2])).toBe(true);
+    expect(matchesFlagType('json', {})).toBe(true);
+  });
+
+  it('json rejects null and primitives', () => {
+    expect(matchesFlagType('json', null)).toBe(false);
+    expect(matchesFlagType('json', 'string')).toBe(false);
+    expect(matchesFlagType('json', 42)).toBe(false);
+  });
+
+  it('unknown type returns false', () => {
+    expect(matchesFlagType('unknown', 'x')).toBe(false);
   });
 });
 
