@@ -3,5 +3,9 @@
   // directly. This file exists so editors and root-level tooling have a valid
   // tsconfig to resolve from. It deliberately compiles nothing on its own.
   "extends": "./config/tsconfig.base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler"
+  },
   "files": []
 }

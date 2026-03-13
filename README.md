@@ -99,7 +99,7 @@ import { MystweaverClient } from '@mystweaver/sdk-js';
 
 const client = new MystweaverClient({
   apiKey: 'mw_sdk_live_...',
-  baseUrl: 'https://api.mystweaver.dev',
+  baseUrl: 'https://mystweaver.dev',
   defaults: { 'game.task-timer-seconds': 8 }, // fallbacks when API is down
   streaming: true, // enable real-time SSE updates
   flushInterval: 5000, // event batch flush interval (ms)
