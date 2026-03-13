@@ -460,7 +460,7 @@ data: {"type":"ping"}
 - [x] Events written correctly to Firestore (async assertion)
 - [x] > 100 events: first 100 accepted, rest dropped, counts correct
 - [x] Malformed events drop gracefully without crashing
-- [ ] All tests passing
+- [x] All tests passing
 
 ---
 
@@ -649,7 +649,7 @@ projects/{projectId}/experiments/{experimentId}
 - [x] Starting an experiment updates flag rules to split traffic by variant weights
 - [x] Stopping an experiment reverts flag to previous state
 - [x] Only draft experiments can be deleted
-- [ ] All tests passing
+- [x] All tests passing
 
 ---
 
@@ -694,7 +694,7 @@ projects/{projectId}/experiments/{experimentId}
 - [x] p-value calculation matches reference implementation
 - [x] Significance correctly reported at p < 0.05
 - [x] Results recalculated on demand
-- [ ] All tests passing
+- [x] All tests passing
 
 ---
 
@@ -845,10 +845,10 @@ expect(client.trackedEvents).toContainEqual({ event: 'room.completed', userId: '
 - [x] Events batched and flushed on interval
 - [x] `flush()` sends remaining events before resolving
 - [x] Circuit breaker: API down -> returns defaults, does not throw
-- [ ] Reconnect: SSE drops -> reconnects within 5s
+- [x] Reconnect: SSE drops -> reconnects within 5s
 - [x] Mock client works as drop-in replacement
 - [x] Works in Node.js environment
-- [ ] Works in browser environment (jsdom)
+- [x] Works in browser environment (jsdom)
 
 ---
 
