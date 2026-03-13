@@ -5,6 +5,7 @@ import { invalidateFlag } from './cache-service';
 import { rebuildFlagConfig } from './flag-service';
 import { publishFlagChange } from './pubsub-service';
 import { AppError } from '../middleware/error-handler';
+import { logger } from '../logger';
 import type {
   ExperimentDocument,
   CreateExperimentRequest,
@@ -189,7 +190,9 @@ export async function startExperiment(
 
   await invalidateFlag(projectId, exp.flagKey);
   await publishFlagChange(exp.flagKey, 'update');
-  rebuildFlagConfig(projectId).catch(() => {});
+  rebuildFlagConfig(projectId).catch((err) => {
+    logger.warn({ err, projectId }, 'Failed to rebuild flag config');
+  });
 
   writeAuditRecord({
     projectId,
@@ -236,7 +239,9 @@ export async function stopExperiment(
 
   await invalidateFlag(projectId, exp.flagKey);
   await publishFlagChange(exp.flagKey, 'update');
-  rebuildFlagConfig(projectId).catch(() => {});
+  rebuildFlagConfig(projectId).catch((err) => {
+    logger.warn({ err, projectId }, 'Failed to rebuild flag config');
+  });
 
   writeAuditRecord({
     projectId,
@@ -290,7 +295,9 @@ export async function concludeExperiment(
 
   await invalidateFlag(projectId, exp.flagKey);
   await publishFlagChange(exp.flagKey, 'update');
-  rebuildFlagConfig(projectId).catch(() => {});
+  rebuildFlagConfig(projectId).catch((err) => {
+    logger.warn({ err, projectId }, 'Failed to rebuild flag config');
+  });
 
   writeAuditRecord({
     projectId,

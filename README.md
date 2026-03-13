@@ -21,8 +21,8 @@ A production-ready alternative to LaunchDarkly, built for teams that want full c
 | **Phase 2** | Admin Interface — authentication, flag management UI, audit log                                      | **Complete**           |
 | **Phase 3** | Experimentation — A/B testing, statistical results engine, live results UI                           | **Complete**           |
 | **Phase 4** | SDK Package — `@mystweaver/sdk-js` for JS/TS (browser + Node)                                        | **Complete**           |
-| **Phase 5** | Production Readiness — Terraform, CI/CD, observability, security hardening                           | Partial (infra exists) |
-| **Phase 6** | Scale & Efficiency — local SDK evaluation, Redis elimination, session lifecycle, near-zero idle cost | Not started            |
+| **Phase 5** | Production Readiness — Terraform, CI/CD, observability, security hardening                           | **Complete**           |
+| **Phase 6** | Scale & Efficiency — local SDK evaluation, Redis elimination, session lifecycle, near-zero idle cost | **Complete**           |
 | **Phase 7** | Event Pipeline — Go ingestion service, BigQuery analytics, pre-aggregated results                    | Not started            |
 | **Phase 8** | Global Reach — multi-region sync, stale-while-revalidate, flag versioning                            | Not started            |
 
@@ -65,7 +65,8 @@ See [ROADMAP.md](ROADMAP.md) for the full engineering roadmap with milestones, d
 | `POST` | `/sdk/evaluate`      | Evaluate a single flag               |
 | `POST` | `/sdk/evaluate/bulk` | Evaluate up to 50 flags              |
 | `GET`  | `/sdk/stream`        | SSE stream of real-time flag updates |
-| `POST` | `/sdk/events`        | Ingest evaluation and metric events  |
+| `GET`  | `/sdk/flags`         | Bulk flag config for local evaluation |
+| `POST` | `/sdk/events`        | Ingest evaluation and metric events   |
 
 ### Admin UI
 
@@ -81,7 +82,7 @@ See [ROADMAP.md](ROADMAP.md) for the full engineering roadmap with milestones, d
 - Rules evaluated top-to-bottom, first match wins
 - Conditions AND'd within a rule (operators: `eq`, `neq`, `gt`, `lt`, `gte`, `lte`, `in`, `contains`)
 - Deterministic percentage rollouts via SHA-256 hash
-- Redis read-through cache with Pub/Sub invalidation
+- In-memory LRU cache with Pub/Sub invalidation
 
 ### Experimentation
 
@@ -146,7 +147,7 @@ expect(client.trackedEvents).toHaveLength(0);
 | **SDK**       | `@mystweaver/sdk-js` — zero-dependency JS/TS client (ESM + CJS) |
 | **Backend**   | Node.js + Express + TypeScript                                  |
 | **Database**  | Google Cloud Firestore                                          |
-| **Cache**     | Cloud Memorystore (Redis 7)                                     |
+| **Cache**     | In-memory LRU (server-side)                                     |
 | **Streaming** | Server-Sent Events (SSE)                                        |
 | **Auth**      | Google IAP (production), dev bypass (local)                     |
 | **Eventing**  | Cloud Pub/Sub                                                   |
@@ -159,11 +160,11 @@ expect(client.trackedEvents).toHaveLength(0);
 ### Prerequisites
 
 - **Node.js** >= 18.0.0
-- **Docker Desktop** (for Firestore emulator + Redis)
+- **Docker Desktop** (for Firestore emulator)
 
 ### Local Development
 
-**Terminal 1 — Start infrastructure (Firestore emulator + Redis):**
+**Terminal 1 — Start infrastructure (Firestore emulator):**
 
 ```bash
 docker compose up -d
@@ -224,7 +225,7 @@ mystweaver/
 ├── apps/
 │   ├── api/                 # Express API server
 │   │   └── src/
-│   │       ├── db/          # Firestore, Redis, Pub/Sub clients
+│   │       ├── db/          # Firestore, Pub/Sub clients
 │   │       ├── middleware/  # Auth, validation, error handling
 │   │       ├── routes/      # REST endpoints
 │   │       ├── services/    # Business logic

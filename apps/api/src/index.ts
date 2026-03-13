@@ -111,13 +111,27 @@ app.post('/api/session/stop', adminAuth, async (_req, res) => {
 // ── SDK routes (Bearer auth + rate limiting) ────────────────────────────
 app.use('/sdk/evaluate', sdkRateLimit, evaluateRouter);
 app.use('/sdk/flags', sdkRateLimit, sdkFlagsRouter);
-app.use('/sdk/stream', streamRouter); // SSE not rate limited (long-lived)
+// SSE connections are long-lived — use a separate, generous rate limit
+// to prevent connection exhaustion while allowing normal usage.
+const sseRateLimit = rateLimit({
+  windowMs: 60_000,
+  limit: 10, // max 10 new SSE connections per minute per key
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const auth = req.headers.authorization;
+    if (auth?.startsWith('Bearer ')) return auth.slice(7);
+    return req.ip ?? 'unknown';
+  },
+  message: { error: 'Too many SSE connections. Max 10 per minute per SDK key.' },
+});
+app.use('/sdk/stream', sseRateLimit, streamRouter);
 app.use('/sdk/events', sdkRateLimit, eventsRouter);
 
 // ── Monitoring ──────────────────────────────────────────────────────────
 app.use('/api/stream', streamRouter);
 
-app.get('/metrics', (_req, res) => {
+app.get('/metrics', adminAuth, (_req, res) => {
   res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
   res.send(collectMetrics());
 });
@@ -126,7 +140,9 @@ app.use(errorHandler);
 
 const server = app.listen(config.port, () => {
   logger.info({ port: config.port, env: config.nodeEnv }, 'Mystweaver API started');
-  startSubscription().catch(() => {});
+  startSubscription().catch((err) => {
+    logger.warn({ err }, 'Failed to start Pub/Sub subscription');
+  });
 });
 
 process.on('SIGTERM', () => {

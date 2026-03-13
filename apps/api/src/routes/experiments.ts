@@ -2,27 +2,15 @@ import { Router } from 'express';
 import * as experimentService from '../services/experiment-service';
 import { computeResults } from '../services/experiment-results';
 import { validateBody } from '../middleware/validate';
-import { AppError } from '../middleware/error-handler';
 import {
   createExperimentSchema,
   updateExperimentSchema,
   concludeExperimentSchema,
 } from '../schemas';
+import { getProjectId, getUser } from '../middleware/route-helpers';
 import type { CreateExperimentRequest, UpdateExperimentRequest } from '../types/experiment';
 
 const router = Router();
-
-function getProjectId(req: { query: Record<string, unknown> }): string {
-  const pid = req.query.projectId;
-  if (!pid || typeof pid !== 'string') {
-    throw new AppError('projectId query parameter is required', 400);
-  }
-  return pid;
-}
-
-function getUser(req: { user?: { email: string } }): string {
-  return req.user?.email ?? 'unknown';
-}
 
 // POST /api/experiments
 router.post(

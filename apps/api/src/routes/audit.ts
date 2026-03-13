@@ -1,16 +1,16 @@
 import { Router } from 'express';
 import { listAuditRecords } from '../services/audit-service';
-import { AppError } from '../middleware/error-handler';
+import { getProjectId } from '../middleware/route-helpers';
 import type { AuditAction } from '../types/audit';
 
 const router = Router();
 
-function getProjectId(req: { query: Record<string, unknown> }): string {
-  const pid = req.query.projectId;
-  if (!pid || typeof pid !== 'string') {
-    throw new AppError('projectId query parameter is required', 400);
+/** Escape a CSV field: wrap in quotes if it contains commas, quotes, or newlines. */
+function csvEscape(field: string): string {
+  if (/[",\n\r]/.test(field) || field.startsWith('=') || field.startsWith('+') || field.startsWith('-') || field.startsWith('@')) {
+    return '"' + field.replace(/"/g, '""') + '"';
   }
-  return pid;
+  return field;
 }
 
 // GET /api/audit — list audit records with optional filters
@@ -58,7 +58,8 @@ router.get('/export', async (req, res, next) => {
         r.performedAt && 'toDate' in r.performedAt
           ? (r.performedAt as unknown as { toDate: () => Date }).toDate().toISOString()
           : '';
-      res.write(`${r.id},${r.action},${r.flagKey ?? ''},${r.performedBy},${at}\n`);
+      const fields = [r.id, r.action, r.flagKey ?? '', r.performedBy, at];
+      res.write(fields.map(csvEscape).join(',') + '\n');
     }
     res.end();
   } catch (err) {

@@ -1,4 +1,4 @@
-# @mystweaver/sdk
+# @mystweaver/sdk-js
 
 JavaScript/TypeScript SDK for [MystWeaver](https://github.com/PGRBryant/mystweaver) — a self-hosted feature flag and experimentation platform.
 
@@ -7,13 +7,13 @@ Works in Node.js and browsers. Zero external dependencies.
 ## Install
 
 ```bash
-npm install @mystweaver/sdk
+npm install @mystweaver/sdk-js
 ```
 
 ## Quick Start
 
 ```typescript
-import { MystweaverClient } from '@mystweaver/sdk';
+import { MystweaverClient } from '@mystweaver/sdk-js';
 
 const client = new MystweaverClient({
   apiKey: 'mw_sdk_live_...',
@@ -124,7 +124,7 @@ const enabled = await client.flag('powerups.jetpack-enabled', user);
 Use `MystweaverMockClient` as a drop-in replacement in tests. No network calls, no API needed.
 
 ```typescript
-import { MystweaverMockClient } from '@mystweaver/sdk/mock';
+import { MystweaverMockClient } from '@mystweaver/sdk-js/mock';
 
 const client = new MystweaverMockClient({
   flags: {
@@ -181,10 +181,10 @@ Same evaluation/tracking API as `MystweaverClient`, plus:
 
 ```typescript
 // Main client
-import { MystweaverClient, HttpError } from '@mystweaver/sdk';
+import { MystweaverClient, HttpError } from '@mystweaver/sdk-js';
 
 // Mock client (for testing)
-import { MystweaverMockClient } from '@mystweaver/sdk/mock';
+import { MystweaverMockClient } from '@mystweaver/sdk-js/mock';
 
 // Types
 import type {
@@ -194,7 +194,7 @@ import type {
   BulkEvaluationResult,
   FlagChangeListener,
   SSEEvent,
-} from '@mystweaver/sdk';
+} from '@mystweaver/sdk-js';
 ```
 
 ## Build Formats

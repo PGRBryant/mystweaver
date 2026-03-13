@@ -14,18 +14,18 @@ Phases 1–6 are complete. Room 404 can integrate today.
 - [x] **Phase 1** — Flag engine, SDK endpoints, SSE streaming, event ingestion
 - [x] **Phase 2** — Admin UI with auth, flag management, audit log
 - [x] **Phase 3** — Experimentation engine with live results UI
-- [x] **Phase 4** — `@mystweaver/sdk` package (browser + Node.js, mock client, 77 tests)
+- [x] **Phase 4** — `@mystweaver/sdk-js` package (browser + Node.js, mock client, 188 tests)
 - [x] **Phase 5** — GCP infrastructure, CI/CD, monitoring, security hardening
 - [x] **Phase 6** — Production hardening (LB + IAP, local SDK evaluation, Redis eliminated, session lifecycle)
 
 ### SDK Integration (start here)
 
 ```bash
-npm install @mystweaver/sdk
+npm install @mystweaver/sdk-js
 ```
 
 ```typescript
-import { MystweaverClient } from '@mystweaver/sdk';
+import { MystweaverClient } from '@mystweaver/sdk-js';
 
 const client = new MystweaverClient({
   apiKey: 'mw_sdk_live_...',
@@ -41,7 +41,7 @@ client.onFlagChange('game.task-timer-seconds', (newVal, oldVal) => { /* update g
 await client.close();
 ```
 
-For testing: `import { MystweaverMockClient } from '@mystweaver/sdk/mock'`
+For testing: `import { MystweaverMockClient } from '@mystweaver/sdk-js/mock'`
 
 ---
 
@@ -736,7 +736,7 @@ projects/{projectId}/experiments/{experimentId}
 
 ## Phase 4: SDK Package
 
-> **Goal**: Ship `@mystweaver/sdk` so Room 404 can integrate with a clean client library instead of raw HTTP calls.
+> **Goal**: Ship `@mystweaver/sdk-js` so Room 404 can integrate with a clean client library instead of raw HTTP calls.
 
 ### 4.1 JavaScript/TypeScript SDK
 
@@ -746,7 +746,7 @@ projects/{projectId}/experiments/{experimentId}
 | **Complexity**   | XL                                               |
 | **Dependencies** | 1.3, 1.4, 1.5, 1.6 (all SDK-facing endpoints)    |
 
-**Package:** `@mystweaver/sdk` (published to npm)
+**Package:** `@mystweaver/sdk-js` (published to npm)
 
 **Client interface:**
 
@@ -808,7 +808,7 @@ await client.close()
 | **Complexity**   | S                                                |
 | **Dependencies** | 4.1 (implements same interface)                  |
 
-**Import:** `import { MystWeaverMockClient } from '@mystweaver/sdk/mock'`
+**Import:** `import { MystWeaverMockClient } from '@mystweaver/sdk-js/mock'`
 
 ```typescript
 const client = new MystWeaverMockClient({

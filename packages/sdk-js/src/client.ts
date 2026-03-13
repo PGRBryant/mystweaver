@@ -52,7 +52,9 @@ export class MystweaverClient {
       // Re-fetch config on any flag change from SSE
       this.sse.onEvent((event) => {
         if (event.type === 'flag.updated' || event.type === 'snapshot') {
-          this.fetchConfig().catch(() => {});
+          this.fetchConfig().catch(() => {
+            // SSE-triggered config refresh failed — will retry on next event
+          });
         }
       });
     } else {
@@ -60,7 +62,9 @@ export class MystweaverClient {
     }
 
     // Fetch initial config (non-blocking — evaluations wait for this)
-    this.configReady = this.fetchConfig().catch(() => {});
+    this.configReady = this.fetchConfig().catch(() => {
+      // Initial config fetch failed — will fall back to server evaluation
+    });
   }
 
   // ── Evaluation methods ─────────────────────────────────────────────────

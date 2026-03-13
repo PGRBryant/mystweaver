@@ -4,6 +4,7 @@ import { invalidateFlag } from './cache-service';
 import { publishFlagChange } from './pubsub-service';
 import { writeAuditRecord } from './audit-service';
 import { AppError } from '../middleware/error-handler';
+import { logger } from '../logger';
 import { matchesFlagType } from '../schemas';
 import type { FlagDocument } from '../types/flag';
 import type { CreateFlagRequest, UpdateFlagRequest } from '../types/api';
@@ -77,7 +78,9 @@ export async function createFlag(
     flagKey: data.key,
     after: toPlain(created.data() as Record<string, unknown>),
   });
-  rebuildFlagConfig(projectId).catch(() => {});
+  rebuildFlagConfig(projectId).catch((err) => {
+    logger.warn({ err, projectId }, 'Failed to rebuild flag config');
+  });
 
   return result;
 }
@@ -146,7 +149,9 @@ export async function updateFlag(
     before,
     after: toPlain(updated.data() as Record<string, unknown>),
   });
-  rebuildFlagConfig(projectId).catch(() => {});
+  rebuildFlagConfig(projectId).catch((err) => {
+    logger.warn({ err, projectId }, 'Failed to rebuild flag config');
+  });
 
   return result;
 }
@@ -196,7 +201,9 @@ export async function replaceFlag(
     before,
     after: toPlain(updated.data() as Record<string, unknown>),
   });
-  rebuildFlagConfig(projectId).catch(() => {});
+  rebuildFlagConfig(projectId).catch((err) => {
+    logger.warn({ err, projectId }, 'Failed to rebuild flag config');
+  });
 
   return result;
 }
@@ -231,7 +238,9 @@ export async function deleteFlag(
     flagKey: key,
     before,
   });
-  rebuildFlagConfig(projectId).catch(() => {});
+  rebuildFlagConfig(projectId).catch((err) => {
+    logger.warn({ err, projectId }, 'Failed to rebuild flag config');
+  });
 }
 
 // ── Composite flag config document ────────────────────────────────────
