@@ -1,12 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 
-// Mock external dependencies that require Pub/Sub and Redis.
+// Mock external dependencies that require Pub/Sub.
 vi.mock('../services/pubsub-service', () => ({
   publishFlagChange: vi.fn().mockResolvedValue(undefined),
-}));
-vi.mock('../db/redis', () => ({
-  getRedis: vi.fn().mockReturnValue(null),
-  closeRedis: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { writeAuditRecord, listAuditRecords } from '../services/audit-service';

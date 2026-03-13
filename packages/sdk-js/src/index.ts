@@ -15,6 +15,10 @@ export type {
   SSESnapshotEvent,
   SSEFlagUpdatedEvent,
   SSEPingEvent,
+  FlagDefinition,
+  FlagRule,
+  FlagCondition,
+  FlagConfigResponse,
 } from './types';
 
 export type { CircuitState } from './circuit-breaker';

@@ -26,7 +26,6 @@ resource "google_project_service" "apis" {
   for_each = toset([
     "run.googleapis.com",
     "firestore.googleapis.com",
-    "redis.googleapis.com",
     "pubsub.googleapis.com",
     "secretmanager.googleapis.com",
     "artifactregistry.googleapis.com",
@@ -192,30 +191,6 @@ resource "google_project_iam_member" "github_actions_sa_user" {
   member  = "serviceAccount:${google_service_account.github_actions.email}"
 }
 
-# ── VPC Access Connector (Cloud Run → Redis) ──────────────────────────────────
-
-resource "google_vpc_access_connector" "default" {
-  name          = "mystweaver-connector"
-  region        = var.region
-  ip_cidr_range = "10.8.0.0/28"
-  network       = "default"
-
-  depends_on = [google_project_service.apis]
-}
-
-# ── Cloud Memorystore (Redis) ─────────────────────────────────────────────────
-
-resource "google_redis_instance" "cache" {
-  name           = "mystweaver-cache"
-  tier           = var.redis_tier
-  memory_size_gb = var.redis_memory_size_gb
-  region         = var.region
-  redis_version  = "REDIS_7_0"
-  display_name   = "Mystweaver cache"
-
-  depends_on = [google_project_service.apis]
-}
-
 # ── Cloud Run API service ─────────────────────────────────────────────────────
 # Terraform creates and owns the service configuration (env vars, SA, scaling).
 # The container image is managed by CI/CD (deploy.yml) — Terraform ignores it
@@ -228,13 +203,8 @@ resource "google_cloud_run_v2_service" "api" {
   template {
     service_account = google_service_account.api.email
 
-    vpc_access {
-      connector = google_vpc_access_connector.default.id
-      egress    = "PRIVATE_RANGES_ONLY"
-    }
-
     scaling {
-      min_instance_count = 1
+      min_instance_count = 0
       max_instance_count = 10
     }
 
@@ -260,14 +230,6 @@ resource "google_cloud_run_v2_service" "api" {
       env {
         name  = "GCP_PROJECT_ID"
         value = var.project_id
-      }
-      env {
-        name  = "REDIS_HOST"
-        value = google_redis_instance.cache.host
-      }
-      env {
-        name  = "REDIS_PORT"
-        value = tostring(google_redis_instance.cache.port)
       }
       env {
         name  = "CORS_ORIGINS"
@@ -312,8 +274,6 @@ resource "google_cloud_run_v2_service" "api" {
 
   depends_on = [
     google_project_service.apis,
-    google_redis_instance.cache,
-    google_vpc_access_connector.default,
     google_secret_manager_secret_version.api_signing_key_initial,
   ]
 }

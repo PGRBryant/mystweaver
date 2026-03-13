@@ -12,10 +12,10 @@ import experimentsRouter from './routes/experiments';
 import evaluateRouter from './routes/evaluate';
 import streamRouter from './routes/stream';
 import eventsRouter from './routes/events';
+import sdkFlagsRouter from './routes/sdk-flags';
 import { errorHandler } from './middleware/error-handler';
 import { adminAuth } from './middleware/admin-auth';
 import { startSubscription, stopSubscription } from './services/pubsub-service';
-import { closeRedis } from './db/redis';
 
 const app = express();
 
@@ -92,8 +92,25 @@ app.get('/api/auth/me', adminAuth, (req, res) => {
   res.json({ email: req.user?.email ?? null });
 });
 
+// ── Session lifecycle ─────────────────────────────────────────────────
+// Used by game servers to warm up / wind down the API between sessions.
+
+app.post('/api/session/start', adminAuth, async (_req, res) => {
+  const start = Date.now();
+  // Warm Firestore connection by issuing a lightweight read
+  const { db } = await import('./db/firestore');
+  await db.listCollections();
+  res.json({ status: 'warm', bootMs: Date.now() - start });
+});
+
+app.post('/api/session/stop', adminAuth, async (_req, res) => {
+  // Flush any pending state (future: flush event buffers, close SSE, etc.)
+  res.json({ status: 'stopped' });
+});
+
 // ── SDK routes (Bearer auth + rate limiting) ────────────────────────────
 app.use('/sdk/evaluate', sdkRateLimit, evaluateRouter);
+app.use('/sdk/flags', sdkRateLimit, sdkFlagsRouter);
 app.use('/sdk/stream', streamRouter); // SSE not rate limited (long-lived)
 app.use('/sdk/events', sdkRateLimit, eventsRouter);
 
@@ -115,7 +132,6 @@ const server = app.listen(config.port, () => {
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received, shutting down');
   stopSubscription()
-    .then(() => closeRedis())
     .then(() => server.close(() => process.exit(0)))
     .catch(() => process.exit(1));
 });

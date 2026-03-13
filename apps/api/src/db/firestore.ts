@@ -24,6 +24,10 @@ export function experimentsCollection(projectId: string) {
   return db.collection(`projects/${projectId}/experiments`);
 }
 
+export function configDoc(projectId: string, docId: string) {
+  return db.doc(`projects/${projectId}/config/${docId}`);
+}
+
 // ── Global collections ──────────────────────────────────────────────────
 
 export const sdkKeysCollection = db.collection('sdk-keys');

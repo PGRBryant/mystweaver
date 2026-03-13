@@ -37,7 +37,7 @@ export async function startSubscription(): Promise<void> {
       try {
         const data = JSON.parse(message.data.toString()) as FlagChangeMessage;
         if (data.projectId) {
-          invalidateFlag(data.projectId, data.flagKey).catch(() => {});
+          invalidateFlag(data.projectId, data.flagKey);
         }
       } catch {
         // Malformed message — ack and move on.

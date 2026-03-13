@@ -167,23 +167,12 @@ resource "google_compute_global_forwarding_rule" "http_redirect" {
   port_range            = "80"
 }
 
-# ── IAP IAM — who can access the admin UI and admin API ──────────────────
-
-resource "google_iap_web_backend_service_iam_member" "web_access" {
-  for_each = toset(var.iap_members)
-
-  web_backend_service = google_compute_backend_service.web.name
-  role                = "roles/iap.httpsResourceAccessAllowed"
-  member              = each.value
-}
-
-resource "google_iap_web_backend_service_iam_member" "api_admin_access" {
-  for_each = toset(var.iap_members)
-
-  web_backend_service = google_compute_backend_service.api_admin.name
-  role                = "roles/iap.httpsResourceAccessAllowed"
-  member              = each.value
-}
+# ── IAP access ────────────────────────────────────────────────────────────
+# IAP IAM bindings require the OAuth consent screen to be configured first.
+# Set up manually in GCP Console:
+#   1. APIs & Services → OAuth consent screen → configure (External type)
+#   2. Security → Identity-Aware Proxy → enable on backend services
+#   3. Add authorized users (e.g. pgrbryant@gmail.com)
 
 # ── Restrict Admin UI to LB-only traffic ─────────────────────────────────
 # The web service should only accept traffic from the load balancer, not

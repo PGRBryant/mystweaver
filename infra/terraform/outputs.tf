@@ -23,11 +23,6 @@ output "cloud_run_url" {
   value       = google_cloud_run_v2_service.api.uri
 }
 
-output "redis_host" {
-  description = "Internal IP of the Redis instance (accessible via VPC connector)"
-  value       = google_redis_instance.cache.host
-}
-
 output "web_service_url" {
   description = "Public URL of the deployed Cloud Run Admin UI service"
   value       = google_cloud_run_v2_service.web.uri

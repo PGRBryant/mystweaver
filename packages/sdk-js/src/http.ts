@@ -11,6 +11,29 @@ export class HttpClient {
     this.timeout = timeout;
   }
 
+  async get<T>(path: string): Promise<T> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeout);
+
+    try {
+      const res = await fetch(`${this.baseUrl}${path}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        throw new HttpError(res.status, await res.text().catch(() => ''));
+      }
+
+      return (await res.json()) as T;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   async post<T>(path: string, body: unknown): Promise<T> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeout);

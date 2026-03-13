@@ -2,12 +2,15 @@ import { HttpClient } from './http';
 import { CircuitBreaker } from './circuit-breaker';
 import { EventQueue } from './event-queue';
 import { SSEManager } from './sse';
+import { evaluateLocally } from './evaluator';
 import type {
   MystweaverConfig,
   UserContext,
   EvaluationResult,
   BulkEvaluationResult,
   FlagChangeListener,
+  FlagConfigResponse,
+  FlagDefinition,
   SSEEvent,
 } from './types';
 
@@ -22,6 +25,11 @@ export class MystweaverClient {
   private readonly sse: SSEManager | null;
   private readonly defaults: Record<string, unknown>;
   private closed = false;
+
+  /** Local flag config store — populated from GET /sdk/flags */
+  private flagConfig: Record<string, FlagDefinition> | null = null;
+  /** Resolves when initial config is loaded (or fails). */
+  private readonly configReady: Promise<void>;
 
   constructor(config: MystweaverConfig) {
     const baseUrl = config.baseUrl.replace(/\/+$/, '');
@@ -41,17 +49,25 @@ export class MystweaverClient {
     if (config.streaming) {
       this.sse = new SSEManager(`${baseUrl}/sdk/stream`, config.apiKey);
       this.sse.connect();
+      // Re-fetch config on any flag change from SSE
+      this.sse.onEvent((event) => {
+        if (event.type === 'flag.updated' || event.type === 'snapshot') {
+          this.fetchConfig().catch(() => {});
+        }
+      });
     } else {
       this.sse = null;
     }
+
+    // Fetch initial config (non-blocking — evaluations wait for this)
+    this.configReady = this.fetchConfig().catch(() => {});
   }
 
   // ── Evaluation methods ─────────────────────────────────────────────────
 
   /**
    * Evaluate a boolean feature flag.
-   * Returns `false` (or the configured default) if the flag is unknown or
-   * the API is unreachable.
+   * Uses local evaluation when config is available, falls back to server.
    */
   async flag(flagKey: string, context: UserContext): Promise<boolean> {
     const result = await this.evaluate(flagKey, context);
@@ -82,10 +98,24 @@ export class MystweaverClient {
   }
 
   /**
-   * Bulk-evaluate multiple flags in a single request.
-   * Returns a record of flag key → value.  Unknown flags have `null` values.
+   * Bulk-evaluate multiple flags.
+   * Uses local evaluation when config is available, falls back to server.
    */
   async evaluateAll(flagKeys: string[], context: UserContext): Promise<Record<string, unknown>> {
+    // Wait for initial config load
+    await this.configReady;
+
+    // Try local evaluation first
+    if (this.flagConfig) {
+      const out: Record<string, unknown> = {};
+      for (const key of flagKeys) {
+        const { value, found } = await evaluateLocally(this.flagConfig[key], key, context);
+        out[key] = found ? value : (this.defaults[key] ?? null);
+      }
+      return out;
+    }
+
+    // Fallback to server
     if (!this.breaker.isAllowed) {
       return this.bulkDefaults(flagKeys);
     }
@@ -168,6 +198,18 @@ export class MystweaverClient {
   // ── Internals ──────────────────────────────────────────────────────────
 
   private async evaluate(flagKey: string, context: UserContext): Promise<unknown> {
+    // Wait for initial config load
+    await this.configReady;
+
+    // Try local evaluation first
+    if (this.flagConfig) {
+      const { value, found } = await evaluateLocally(this.flagConfig[flagKey], flagKey, context);
+      if (found) return value;
+      // Flag not in config — use default
+      return this.defaults[flagKey] ?? null;
+    }
+
+    // Fallback to server evaluation
     if (!this.breaker.isAllowed) {
       return this.defaults[flagKey] ?? null;
     }
@@ -182,6 +224,18 @@ export class MystweaverClient {
     } catch {
       this.breaker.onFailure();
       return this.defaults[flagKey] ?? null;
+    }
+  }
+
+  private async fetchConfig(): Promise<void> {
+    try {
+      const response = await this.http.get<FlagConfigResponse>('/sdk/flags');
+      // Validate that the response contains flag definitions (not evaluation results)
+      if (response.flags && typeof response.flagCount === 'number') {
+        this.flagConfig = response.flags as Record<string, FlagDefinition>;
+      }
+    } catch {
+      // Config fetch failed — will fall back to server evaluation
     }
   }
 

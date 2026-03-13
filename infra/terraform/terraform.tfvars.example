@@ -6,10 +6,6 @@ region      = "us-central1"
 github_org  = "yourusername"
 github_repo = "mystweaver"
 
-# Redis — use STANDARD_HA in production for high availability
-redis_tier           = "BASIC"
-redis_memory_size_gb = 1
-
 # Monitoring
 alert_email = "you@example.com"
 
@@ -17,4 +13,4 @@ alert_email = "you@example.com"
 domain                  = "mystweaver.dev"
 iap_oauth_client_id     = "your-oauth-client-id.apps.googleusercontent.com"
 iap_oauth_client_secret = "your-oauth-client-secret"
-iap_members             = ["user:you@gmail.com"]
+# IAP authorized users are configured in GCP Console → Security → Identity-Aware Proxy

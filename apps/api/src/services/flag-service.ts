@@ -1,5 +1,5 @@
 import { FieldValue } from '@google-cloud/firestore';
-import { flagsCollection } from '../db/firestore';
+import { flagsCollection, configDoc } from '../db/firestore';
 import { invalidateFlag } from './cache-service';
 import { publishFlagChange } from './pubsub-service';
 import { writeAuditRecord } from './audit-service';
@@ -69,7 +69,7 @@ export async function createFlag(
   const created = await docRef.get();
   const result = { key: created.id, ...created.data() } as FlagDocument;
 
-  // Fire-and-forget audit record.
+  // Fire-and-forget audit record + composite config rebuild.
   writeAuditRecord({
     projectId,
     action: 'flag.created',
@@ -77,6 +77,7 @@ export async function createFlag(
     flagKey: data.key,
     after: toPlain(created.data() as Record<string, unknown>),
   });
+  rebuildFlagConfig(projectId).catch(() => {});
 
   return result;
 }
@@ -145,6 +146,7 @@ export async function updateFlag(
     before,
     after: toPlain(updated.data() as Record<string, unknown>),
   });
+  rebuildFlagConfig(projectId).catch(() => {});
 
   return result;
 }
@@ -194,6 +196,7 @@ export async function replaceFlag(
     before,
     after: toPlain(updated.data() as Record<string, unknown>),
   });
+  rebuildFlagConfig(projectId).catch(() => {});
 
   return result;
 }
@@ -228,4 +231,51 @@ export async function deleteFlag(
     flagKey: key,
     before,
   });
+  rebuildFlagConfig(projectId).catch(() => {});
+}
+
+// ── Composite flag config document ────────────────────────────────────
+
+/**
+ * Rebuild the composite config doc (`projects/{pid}/config/flags`).
+ * Contains all active flag definitions in a single Firestore document,
+ * so the SDK can fetch the entire ruleset in one read.
+ */
+export async function rebuildFlagConfig(projectId: string): Promise<void> {
+  const snapshot = await flagsCollection(projectId)
+    .where('deletedAt', '==', null)
+    .get();
+
+  const flags: Record<string, unknown> = {};
+  for (const doc of snapshot.docs) {
+    const data = doc.data();
+    flags[doc.id] = {
+      key: doc.id,
+      name: data.name,
+      description: data.description,
+      type: data.type,
+      defaultValue: data.defaultValue,
+      enabled: data.enabled,
+      rules: data.rules ?? [],
+      tags: data.tags ?? [],
+    };
+  }
+
+  await configDoc(projectId, 'flags').set({
+    flags,
+    flagCount: snapshot.size,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+}
+
+/**
+ * Read the composite flag config document (1 Firestore read).
+ * Returns null if it doesn't exist yet (e.g., no flags created).
+ */
+export async function getFlagConfig(
+  projectId: string,
+): Promise<{ flags: Record<string, unknown>; flagCount: number; updatedAt: unknown } | null> {
+  const doc = await configDoc(projectId, 'flags').get();
+  if (!doc.exists) return null;
+  return doc.data() as { flags: Record<string, unknown>; flagCount: number; updatedAt: unknown };
 }

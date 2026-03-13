@@ -80,6 +80,38 @@ export interface SSEPingEvent {
 
 export type SSEEvent = SSESnapshotEvent | SSEFlagUpdatedEvent | SSEPingEvent;
 
+// ── Flag config (for local evaluation) ───────────────────────────────────
+
+export interface FlagCondition {
+  attribute: string;
+  operator: 'eq' | 'neq' | 'gt' | 'lt' | 'gte' | 'lte' | 'in' | 'contains';
+  value: unknown;
+}
+
+export interface FlagRule {
+  id: string;
+  description?: string;
+  conditions: FlagCondition[];
+  value: unknown;
+  rolloutPercentage?: number;
+}
+
+export interface FlagDefinition {
+  key: string;
+  name: string;
+  description?: string;
+  type: 'boolean' | 'string' | 'number' | 'json';
+  defaultValue: unknown;
+  enabled: boolean;
+  rules: FlagRule[];
+  tags?: string[];
+}
+
+export interface FlagConfigResponse {
+  flags: Record<string, FlagDefinition>;
+  flagCount: number;
+}
+
 // ── Callbacks ────────────────────────────────────────────────────────────
 
 export type FlagChangeListener = (newValue: unknown, previousValue?: unknown) => void;
