@@ -1,54 +1,56 @@
 # MystWeaver Engineering Roadmap
 
-This document defines the complete engineering roadmap for MystWeaver, sequenced so that [Room 404](https://github.com/PGRBRyant/room-404) (a multiplayer browser game) can consume MystWeaver as its feature flag and experimentation backend.
+Self-hosted, open-source feature flag and experimentation platform built for [Room 404](https://github.com/PGRBRyant/room-404) (a multiplayer browser game).
 
-**Target scale:** 500+ concurrent Room 404 players, primarily US-based with global reach.
-**Platform:** GCP-native (all services on Google Cloud Platform).
-**Languages:** TypeScript (API, SDK, admin UI), Go (event pipeline), Rust (WASM evaluation core — future).
-**Cost model:** Near-zero idle cost between game sessions; pay only during active play.
+**Platform:** GCP-native (Cloud Run, Firestore, Redis, Pub/Sub).
+**Stack:** TypeScript throughout — API, SDK, admin UI.
 
 ---
 
-## Room 404 Integration Readiness
+## V1 Status: Ready to Ship
 
-Use this checklist to determine what Room 404 can do at any point:
+Phases 1–5 are complete. Room 404 can integrate today.
 
-### (a) Room 404 can start building against MystWeaver
-
-All of Phase 1 must be complete:
-
-- [x] **1.1** SDK Key Management — create, list, revoke, validate
-- [x] **1.2** Flag Data Model & CRUD — multi-project Firestore schema, full REST API
-- [x] **1.3** Flag Evaluation Engine — single flag evaluation via `POST /sdk/evaluate`
-- [x] **1.4** Bulk Flag Evaluation — `POST /sdk/evaluate/bulk` (up to 50 flags)
-- [x] **1.5** Server-Sent Events Stream — `GET /sdk/stream` for real-time updates
-- [x] **1.6** Event Ingestion — `POST /sdk/events` for metrics and experiment data
-- [x] **Seed** — `npm run seed` populates all Room 404 flags into local emulator
-
-### (b) Room 404 can run integration tests
-
-Phase 1 + Phase 4 must be complete:
-
-- [x] **4.1** JavaScript/TypeScript SDK published (`@mystweaver/sdk`)
-- [x] **4.2** Mock Client available (`@mystweaver/sdk/mock`)
-- [x] **4.3** SDK test suite passing (Node + browser)
-
-### (c) Live demo ready
-
-Phases 1–5 complete:
-
+- [x] **Phase 1** — Flag engine, SDK endpoints, SSE streaming, event ingestion
 - [x] **Phase 2** — Admin UI with auth, flag management, audit log
 - [x] **Phase 3** — Experimentation engine with live results UI
-- [ ] **Phase 5** — Production infrastructure, CI/CD, observability, security
+- [x] **Phase 4** — `@mystweaver/sdk` package (browser + Node.js, mock client, 77 tests)
+- [x] **Phase 5** — GCP infrastructure, CI/CD, monitoring, security hardening
 
-### (d) Room 404 can handle 500+ concurrent players at near-zero idle cost
+### SDK Integration (start here)
 
-Phases 6–7 complete:
+```bash
+npm install @mystweaver/sdk
+```
 
-- [ ] **6.4** — Local evaluation in SDK (zero-latency flag checks)
-- [ ] **6.6** — Redis eliminated (no always-on infrastructure)
-- [ ] **6.7** — Session lifecycle (scale to zero between sessions, ~$0.02/mo idle)
-- [ ] **Phase 7** — Event pipeline (Go ingestion service, BigQuery analytics)
+```typescript
+import { MystweaverClient } from '@mystweaver/sdk';
+
+const client = new MystweaverClient({
+  apiKey: 'mw_sdk_live_...',
+  baseUrl: 'https://your-api-url.run.app',
+});
+
+const enabled = await client.flag('powerups.jetpack-enabled', { id: 'player-1', attributes: {} });
+client.track('room.completed', 'player-1', { floor: 7 });
+client.onFlagChange('game.task-timer-seconds', (newVal, oldVal) => { /* update game */ });
+
+await client.close();
+```
+
+For testing: `import { MystweaverMockClient } from '@mystweaver/sdk/mock'`
+
+---
+
+## V2 Roadmap (Future)
+
+Scaling, cost optimization, and global reach — planned but not started.
+
+- [ ] **6.4** Local evaluation in SDK (zero-latency flag checks)
+- [ ] **6.6** Eliminate Redis ($35/mo → $0/mo idle)
+- [ ] **6.7** Session lifecycle (scale to zero, ~$0.02/mo idle)
+- [ ] **Phase 7** Event pipeline (Go ingestion, BigQuery analytics)
+- [ ] **Phase 8** Global reach (multi-region, stale-while-revalidate, flag versioning)
 
 ---
 
@@ -977,6 +979,12 @@ expect(client.trackedEvents).toContainEqual({ event: 'room.completed', userId: '
 - [x] Helmet.js security headers on all responses
 - [x] Audit log immutable (no delete/update endpoints)
 - [x] Workload Identity Federation (no long-lived service account keys)
+
+---
+
+# V2 — Future Work
+
+Everything below is planned but not started. These phases focus on scaling to 500+ concurrent players, eliminating always-on costs, and adding a dedicated event pipeline.
 
 ---
 
