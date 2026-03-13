@@ -9,3 +9,6 @@ github_repo = "mystweaver"
 # Redis — use STANDARD_HA in production for high availability
 redis_tier           = "BASIC"
 redis_memory_size_gb = 1
+
+# Monitoring
+alert_email = "you@example.com"

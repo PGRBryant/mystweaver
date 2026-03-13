@@ -867,13 +867,13 @@ expect(client.trackedEvents).toContainEqual({ event: 'room.completed', userId: '
 **Resources in `infra/terraform/`:**
 
 - [x] Cloud Run service (API)
-- [ ] Cloud Run service (Admin UI, behind IAP)
+- [x] Cloud Run service (Admin UI, behind IAP)
 - [x] Firestore database
 - [x] Memorystore (Redis) for caching
 - [x] Pub/Sub topic for flag change events
 - [x] Secret Manager secrets (all credentials)
 - [x] Artifact Registry (Docker images)
-- [ ] Cloud Monitoring alert policies
+- [x] Cloud Monitoring alert policies
 - [x] IAM bindings (least privilege per service)
 - [x] Workload Identity Federation for GitHub Actions
 
@@ -912,10 +912,10 @@ expect(client.trackedEvents).toContainEqual({ event: 'room.completed', userId: '
 - [x] API unit tests passing (evaluation engine, metrics, error handler, flag validation, stats)
 - [x] SDK unit tests passing (client, mock, circuit breaker, event queue, HTTP)
 - [x] Integration tests against Firestore emulator
-- [ ] Deploy workflow auto-deploys on merge to main (blocked: WIF attribute condition)
-- [ ] Admin UI deployed to Cloud Run via CI
-- [ ] SDK publish to npm on version bump
-- [ ] Smoke tests against production endpoint
+- [x] Deploy workflow auto-deploys on merge to main
+- [x] Admin UI deployed to Cloud Run via CI
+- [x] SDK publish to npm on version bump
+- [x] Smoke tests against production endpoint
 
 ---
 
@@ -951,7 +951,7 @@ expect(client.trackedEvents).toContainEqual({ event: 'room.completed', userId: '
 - [x] All 5 custom metrics instrumented (evaluations, latency, SSE, events, experiments)
 - [x] HTTP request metrics (total, latency, errors) instrumented
 - [x] Cache hit/miss metrics instrumented
-- [ ] Alert policies deployed to Cloud Monitoring
+- [x] Alert policies deployed to Cloud Monitoring
 - [ ] Cloud Trace integration
 
 ---

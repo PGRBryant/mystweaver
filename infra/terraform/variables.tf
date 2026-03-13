@@ -42,3 +42,8 @@ variable "redis_memory_size_gb" {
   type        = number
   default     = 1
 }
+
+variable "alert_email" {
+  description = "Email address for Cloud Monitoring alert notifications"
+  type        = string
+}

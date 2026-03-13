@@ -1,9 +1,8 @@
 name: Deploy
 
 on:
-  # Auto-deploy disabled until WIF attribute condition is fixed (Phase 5).
-  # push:
-  #   branches: [main]
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -14,12 +13,15 @@ concurrency:
   group: deploy-production
   cancel-in-progress: false  # Never cancel an in-flight deploy
 
+env:
+  REGISTRY: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/mystweaver
+
 jobs:
 
-  # ── Build & push Docker image ─────────────────────────────────────────────────
-  build:
+  # ── Build & push API Docker image ──────────────────────────────────────────
+  build-api:
     runs-on: ubuntu-latest
-    name: Build & Push Image
+    name: Build & Push API Image
     outputs:
       image: ${{ steps.meta.outputs.image }}
 
@@ -48,25 +50,68 @@ jobs:
 
       - name: Build and push image
         id: meta
-        env:
-          IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/mystweaver/api
-          SHA: ${{ github.sha }}
         run: |
+          IMAGE="$REGISTRY/api"
           docker build \
-            --tag "$IMAGE:$SHA" \
+            --tag "$IMAGE:${{ github.sha }}" \
             --tag "$IMAGE:latest" \
-            --label "org.opencontainers.image.revision=$SHA" \
+            --label "org.opencontainers.image.revision=${{ github.sha }}" \
             --label "org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}" \
             .
-          docker push "$IMAGE:$SHA"
+          docker push "$IMAGE:${{ github.sha }}"
           docker push "$IMAGE:latest"
-          echo "image=$IMAGE:$SHA" >> "$GITHUB_OUTPUT"
+          echo "image=$IMAGE:${{ github.sha }}" >> "$GITHUB_OUTPUT"
 
-  # ── Deploy to Cloud Run ───────────────────────────────────────────────────────
-  deploy:
+  # ── Build & push Admin UI Docker image ─────────────────────────────────────
+  build-web:
     runs-on: ubuntu-latest
-    name: Deploy to Cloud Run
-    needs: build
+    name: Build & Push Web Image
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run build --workspace=@mystweaver/web
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Build and push image
+        id: meta
+        run: |
+          IMAGE="$REGISTRY/web"
+          docker build \
+            --tag "$IMAGE:${{ github.sha }}" \
+            --tag "$IMAGE:latest" \
+            --label "org.opencontainers.image.revision=${{ github.sha }}" \
+            --label "org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}" \
+            -f apps/web/Dockerfile \
+            .
+          docker push "$IMAGE:${{ github.sha }}"
+          docker push "$IMAGE:latest"
+          echo "image=$IMAGE:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+  # ── Deploy API to Cloud Run ────────────────────────────────────────────────
+  deploy-api:
+    runs-on: ubuntu-latest
+    name: Deploy API to Cloud Run
+    needs: build-api
     environment: production
 
     steps:
@@ -81,12 +126,122 @@ jobs:
         with:
           service: mystweaver-api
           region: ${{ secrets.GCP_REGION }}
-          image: ${{ needs.build.outputs.image }}
+          image: ${{ needs.build-api.outputs.image }}
 
-      - name: Show service URL
+  # ── Deploy Admin UI to Cloud Run ───────────────────────────────────────────
+  deploy-web:
+    runs-on: ubuntu-latest
+    name: Deploy Admin UI to Cloud Run
+    needs: [build-web, deploy-api]
+    environment: production
+
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: mystweaver-web
+          region: ${{ secrets.GCP_REGION }}
+          image: ${{ needs.build-web.outputs.image }}
+
+  # ── Smoke Tests (post-deploy) ──────────────────────────────────────────────
+  smoke-test:
+    runs-on: ubuntu-latest
+    name: Smoke Tests
+    needs: [deploy-api, deploy-web]
+
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Smoke test API
         run: |
-          URL=$(gcloud run services describe mystweaver-api \
+          API_URL=$(gcloud run services describe mystweaver-api \
             --region=${{ secrets.GCP_REGION }} \
             --format='value(status.url)')
-          echo "Deployed to: $URL"
-          echo "Health check: $URL/health"
+
+          echo "API URL: $API_URL"
+
+          # Retry health check up to 12 times (60 seconds)
+          for i in $(seq 1 12); do
+            STATUS=$(curl -s -o /dev/null -w '%{http_code}' "$API_URL/health" || true)
+            if [ "$STATUS" = "200" ]; then
+              echo "API health check passed"
+              break
+            fi
+            if [ "$i" = "12" ]; then
+              echo "API health check failed after 60s (last status: $STATUS)"
+              exit 1
+            fi
+            echo "Attempt $i/12: status=$STATUS, retrying in 5s..."
+            sleep 5
+          done
+
+      - name: Smoke test Admin UI
+        run: |
+          WEB_URL=$(gcloud run services describe mystweaver-web \
+            --region=${{ secrets.GCP_REGION }} \
+            --format='value(status.url)')
+
+          echo "Web URL: $WEB_URL"
+
+          STATUS=$(curl -s -o /dev/null -w '%{http_code}' "$WEB_URL/" || true)
+          if [ "$STATUS" = "200" ]; then
+            echo "Admin UI health check passed"
+          else
+            echo "Admin UI returned status $STATUS"
+            exit 1
+          fi
+
+  # ── Publish SDK to npm (on version bump) ───────────────────────────────────
+  publish-sdk:
+    runs-on: ubuntu-latest
+    name: Publish SDK to npm
+    needs: smoke-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm ci
+
+      - name: Check if SDK version changed
+        id: version-check
+        run: |
+          CURRENT_VERSION=$(node -p "require('./packages/sdk-js/package.json').version")
+          PUBLISHED_VERSION=$(npm view @mystweaver/sdk version 2>/dev/null || echo "0.0.0")
+
+          if [ "$CURRENT_VERSION" != "$PUBLISHED_VERSION" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Publishing v$CURRENT_VERSION (was $PUBLISHED_VERSION)"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Version unchanged ($CURRENT_VERSION), skipping publish"
+          fi
+
+      - name: Build SDK
+        if: steps.version-check.outputs.changed == 'true'
+        run: npm run build --workspace=@mystweaver/sdk-js
+
+      - name: Publish to npm
+        if: steps.version-check.outputs.changed == 'true'
+        run: npm publish --workspace=@mystweaver/sdk-js --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

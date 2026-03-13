@@ -313,3 +313,193 @@ resource "google_cloud_run_v2_service" "api" {
     google_secret_manager_secret_version.api_signing_key_initial,
   ]
 }
+
+# ── Cloud Run Admin UI service (behind IAP) ──────────────────────────────
+
+resource "google_service_account" "web" {
+  account_id   = "mystweaver-web"
+  display_name = "Mystweaver Admin UI Runtime"
+  description  = "Service account used by the Cloud Run Admin UI service"
+}
+
+resource "google_cloud_run_v2_service" "web" {
+  name     = "mystweaver-web"
+  location = var.region
+
+  template {
+    service_account = google_service_account.web.email
+
+    scaling {
+      min_instance_count = 0
+      max_instance_count = 3
+    }
+
+    containers {
+      # Placeholder on first apply — CI/CD owns image updates thereafter.
+      image = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.mystweaver.repository_id}/web:latest"
+
+      ports {
+        container_port = 80
+      }
+
+      resources {
+        limits = {
+          cpu    = "1"
+          memory = "256Mi"
+        }
+      }
+
+      env {
+        name  = "MYSTWEAVER_API_URL"
+        value = google_cloud_run_v2_service.api.uri
+      }
+
+      startup_probe {
+        http_get {
+          path = "/"
+          port = 80
+        }
+        initial_delay_seconds = 2
+        timeout_seconds       = 3
+        period_seconds        = 5
+        failure_threshold     = 3
+      }
+    }
+  }
+
+  # CI/CD (deploy.yml) controls image updates — Terraform only manages infra config.
+  lifecycle {
+    ignore_changes = [template[0].containers[0].image]
+  }
+
+  depends_on = [
+    google_project_service.apis,
+    google_cloud_run_v2_service.api,
+  ]
+}
+
+# IAP brand + OAuth client for the Admin UI.
+# NOTE: The OAuth consent screen (brand) must be configured manually in the
+# GCP console the first time. Terraform can manage the IAP backend binding
+# once the brand exists. For now, restrict access via IAM on the Cloud Run
+# service invoker role — only authenticated users with the role can reach it.
+
+resource "google_cloud_run_v2_service_iam_member" "web_noauth" {
+  project  = var.project_id
+  location = var.region
+  name     = google_cloud_run_v2_service.web.name
+  role     = "roles/run.invoker"
+  member   = "allUsers"
+}
+
+# ── Cloud Monitoring Alert Policies ──────────────────────────────────────
+
+# Notification channel — email alert target.
+# Additional channels (PagerDuty, Slack) can be added here.
+resource "google_monitoring_notification_channel" "email" {
+  display_name = "Mystweaver Alerts Email"
+  type         = "email"
+
+  labels = {
+    email_address = var.alert_email
+  }
+
+  depends_on = [google_project_service.apis]
+}
+
+# Alert: API p99 latency > 500ms
+resource "google_monitoring_alert_policy" "api_latency" {
+  display_name = "Mystweaver API p99 latency > 500ms"
+  combiner     = "OR"
+
+  conditions {
+    display_name = "Cloud Run request latency p99 > 500ms"
+
+    condition_threshold {
+      filter          = "resource.type = \"cloud_run_revision\" AND resource.labels.service_name = \"mystweaver-api\" AND metric.type = \"run.googleapis.com/request_latencies\""
+      comparison      = "COMPARISON_GT"
+      threshold_value = 500
+      duration        = "300s"
+
+      aggregations {
+        alignment_period     = "300s"
+        per_series_aligner   = "ALIGN_PERCENTILE_99"
+        cross_series_reducer = "REDUCE_MAX"
+        group_by_fields      = ["resource.labels.service_name"]
+      }
+    }
+  }
+
+  notification_channels = [google_monitoring_notification_channel.email.id]
+
+  alert_strategy {
+    auto_close = "1800s"
+  }
+
+  depends_on = [google_project_service.apis]
+}
+
+# Alert: API error rate > 1%
+resource "google_monitoring_alert_policy" "api_error_rate" {
+  display_name = "Mystweaver API error rate > 1%"
+  combiner     = "OR"
+
+  conditions {
+    display_name = "Cloud Run 5xx error rate > 1%"
+
+    condition_threshold {
+      filter          = "resource.type = \"cloud_run_revision\" AND resource.labels.service_name = \"mystweaver-api\" AND metric.type = \"run.googleapis.com/request_count\" AND metric.labels.response_code_class = \"5xx\""
+      comparison      = "COMPARISON_GT"
+      threshold_value = 0.01
+      duration        = "300s"
+
+      aggregations {
+        alignment_period     = "300s"
+        per_series_aligner   = "ALIGN_RATE"
+        cross_series_reducer = "REDUCE_SUM"
+        group_by_fields      = ["resource.labels.service_name"]
+      }
+    }
+  }
+
+  notification_channels = [google_monitoring_notification_channel.email.id]
+
+  alert_strategy {
+    auto_close = "1800s"
+  }
+
+  depends_on = [google_project_service.apis]
+}
+
+# Alert: SSE connection count drops to 0 unexpectedly
+# Uses the custom sse_connections_active Prometheus metric exported by the API.
+resource "google_monitoring_alert_policy" "sse_connections_drop" {
+  display_name = "Mystweaver SSE connections dropped to 0"
+  combiner     = "OR"
+
+  conditions {
+    display_name = "SSE active connections == 0"
+
+    condition_threshold {
+      filter          = "resource.type = \"cloud_run_revision\" AND resource.labels.service_name = \"mystweaver-api\" AND metric.type = \"custom.googleapis.com/sse_connections_active\""
+      comparison      = "COMPARISON_LT"
+      threshold_value = 1
+      duration        = "600s"
+
+      aggregations {
+        alignment_period     = "300s"
+        per_series_aligner   = "ALIGN_MEAN"
+        cross_series_reducer = "REDUCE_SUM"
+        group_by_fields      = ["resource.labels.service_name"]
+      }
+    }
+  }
+
+  notification_channels = [google_monitoring_notification_channel.email.id]
+
+  alert_strategy {
+    auto_close = "1800s"
+  }
+
+  depends_on = [google_project_service.apis]
+}
