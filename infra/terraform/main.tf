@@ -257,6 +257,7 @@ resource "google_cloud_run_v2_service" "api" {
           cpu    = "1"
           memory = "512Mi"
         }
+        startup_cpu_boost = false
       }
 
       env {
@@ -357,9 +358,10 @@ resource "google_cloud_run_v2_service" "web" {
 
       resources {
         limits = {
-          cpu    = "1"
-          memory = "512Mi"
+          cpu    = "0.5"
+          memory = "256Mi"
         }
+        startup_cpu_boost = false
       }
 
       env {
