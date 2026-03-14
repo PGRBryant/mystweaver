@@ -25,6 +25,7 @@ const SEED_PROJECT_ID = 'room-404';
 
 const db = new Firestore({ projectId: PROJECT_ID });
 const flagsCollection = db.collection(`projects/${SEED_PROJECT_ID}/flags`);
+const configCollection = db.collection(`projects/${SEED_PROJECT_ID}/config`);
 const sdkKeysCollection = db.collection('sdk-keys');
 const experimentsCollection = db.collection(`projects/${SEED_PROJECT_ID}/experiments`);
 
@@ -338,6 +339,32 @@ async function seedExperiments(): Promise<void> {
   console.log(`  ✓ ${EXPERIMENTS.length} experiments seeded`);
 }
 
+async function rebuildFlagConfig(): Promise<void> {
+  console.log('Rebuilding composite flag config document...');
+
+  const flags: Record<string, unknown> = {};
+  for (const flag of FLAGS) {
+    flags[flag.key] = {
+      key: flag.key,
+      name: flag.name,
+      description: flag.description,
+      type: flag.type,
+      defaultValue: flag.defaultValue,
+      enabled: true,
+      rules: [],
+      tags: flag.tags,
+    };
+  }
+
+  await configCollection.doc('flags').set({
+    flags,
+    flagCount: FLAGS.length,
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+
+  console.log(`  ✓ Composite config built (${FLAGS.length} flags)`);
+}
+
 async function seedSDKKey(): Promise<void> {
   const TEST_KEY_ID = 'seed-test-key';
   const existingDoc = await sdkKeysCollection.doc(TEST_KEY_ID).get();
@@ -394,6 +421,7 @@ async function main(): Promise<void> {
   }
 
   await seedFlags();
+  await rebuildFlagConfig();
   await seedExperiments();
   await seedSDKKey();
 

@@ -1,7 +1,7 @@
 # Local development environment: Firestore emulator + API server
 # Cache is in-memory (LRU) — no Redis needed.
 # Usage:
-#   docker-compose up -d            # start background services only
+#   docker-compose up -d            # start Firestore emulator
 #   docker-compose --profile api up # also start the API in Docker
 
 services:
