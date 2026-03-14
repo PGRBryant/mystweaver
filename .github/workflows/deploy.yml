@@ -236,6 +236,7 @@ jobs:
 
       - name: Publish to npm
         if: steps.version-check.outputs.changed == 'true'
+        continue-on-error: true  # Requires NPM_TOKEN secret — skipped until public distribution is ready
         run: npm publish --workspace=@mystweaver/sdk-js --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
