@@ -116,9 +116,7 @@ describe('SDK in browser environment (jsdom)', () => {
     client.track('page.view', 'user-1', { page: '/home' });
     await client.flush();
 
-    const eventsCalls = fetchMock.mock.calls.filter((c: [string]) =>
-      c[0].includes('/sdk/events'),
-    );
+    const eventsCalls = fetchMock.mock.calls.filter((c: [string]) => c[0].includes('/sdk/events'));
     expect(eventsCalls).toHaveLength(1);
     await client.close();
   });

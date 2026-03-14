@@ -13,22 +13,18 @@ import type { CreateExperimentRequest, UpdateExperimentRequest } from '../types/
 const router = Router();
 
 // POST /api/experiments
-router.post(
-  '/',
-  validateBody(createExperimentSchema),
-  async (req, res, next) => {
-    try {
-      const experiment = await experimentService.createExperiment(
-        getProjectId(req),
-        req.body as CreateExperimentRequest,
-        getUser(req),
-      );
-      res.status(201).json(experiment);
-    } catch (err) {
-      next(err);
-    }
-  },
-);
+router.post('/', validateBody(createExperimentSchema), async (req, res, next) => {
+  try {
+    const experiment = await experimentService.createExperiment(
+      getProjectId(req),
+      req.body as CreateExperimentRequest,
+      getUser(req),
+    );
+    res.status(201).json(experiment);
+  } catch (err) {
+    next(err);
+  }
+});
 
 // GET /api/experiments
 router.get('/', async (req, res, next) => {

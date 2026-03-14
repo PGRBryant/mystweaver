@@ -11,8 +11,11 @@ const router = Router();
 function csvEscape(field: string): string {
   // Strip tabs to prevent tab-then-formula injection across cells.
   const sanitised = field.replace(/\t/g, ' ');
-  const formulaChar = sanitised.startsWith('=') || sanitised.startsWith('+') ||
-    sanitised.startsWith('-') || sanitised.startsWith('@');
+  const formulaChar =
+    sanitised.startsWith('=') ||
+    sanitised.startsWith('+') ||
+    sanitised.startsWith('-') ||
+    sanitised.startsWith('@');
   if (/[",\n\r]/.test(sanitised) || formulaChar) {
     return '"' + (formulaChar ? "'" : '') + sanitised.replace(/"/g, '""') + '"';
   }
@@ -31,7 +34,7 @@ router.get('/', async (req, res, next) => {
       flagKey: typeof flagKey === 'string' ? flagKey : undefined,
       action: typeof action === 'string' ? (action as AuditAction) : undefined,
       performedBy: typeof performedBy === 'string' ? performedBy : undefined,
-      limit: typeof limit === 'string' ? (parseInt(limit, 10) || undefined) : undefined,
+      limit: typeof limit === 'string' ? parseInt(limit, 10) || undefined : undefined,
       before: typeof before === 'string' ? before : undefined,
     });
 

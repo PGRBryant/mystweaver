@@ -22,8 +22,6 @@ jobs:
   build-api:
     runs-on: ubuntu-latest
     name: Build & Push API Image
-    outputs:
-      image: ${{ steps.meta.outputs.image }}
 
     steps:
       - uses: actions/checkout@v4
@@ -49,7 +47,6 @@ jobs:
         run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
 
       - name: Build and push image
-        id: meta
         run: |
           IMAGE="$REGISTRY/api"
           docker build \
@@ -60,14 +57,11 @@ jobs:
             .
           docker push "$IMAGE:${{ github.sha }}"
           docker push "$IMAGE:latest"
-          echo "image=$IMAGE:${{ github.sha }}" >> "$GITHUB_OUTPUT"
 
   # ── Build & push Admin UI Docker image ─────────────────────────────────────
   build-web:
     runs-on: ubuntu-latest
     name: Build & Push Web Image
-    outputs:
-      image: ${{ steps.meta.outputs.image }}
 
     steps:
       - uses: actions/checkout@v4
@@ -93,7 +87,6 @@ jobs:
         run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
 
       - name: Build and push image
-        id: meta
         run: |
           IMAGE="$REGISTRY/web"
           docker build \
@@ -105,7 +98,6 @@ jobs:
             .
           docker push "$IMAGE:${{ github.sha }}"
           docker push "$IMAGE:latest"
-          echo "image=$IMAGE:${{ github.sha }}" >> "$GITHUB_OUTPUT"
 
   # ── Deploy API to Cloud Run ────────────────────────────────────────────────
   deploy-api:
@@ -126,7 +118,7 @@ jobs:
         with:
           service: mystweaver-api
           region: ${{ secrets.GCP_REGION }}
-          image: ${{ needs.build-api.outputs.image }}
+          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/mystweaver/api:${{ github.sha }}
 
   # ── Deploy Admin UI to Cloud Run ───────────────────────────────────────────
   deploy-web:
@@ -147,7 +139,7 @@ jobs:
         with:
           service: mystweaver-web
           region: ${{ secrets.GCP_REGION }}
-          image: ${{ needs.build-web.outputs.image }}
+          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/mystweaver/web:${{ github.sha }}
 
   # ── Smoke Tests (post-deploy) ──────────────────────────────────────────────
   smoke-test:

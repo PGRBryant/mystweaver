@@ -8,22 +8,18 @@ import type { CreateFlagRequest, UpdateFlagRequest } from '../types/api';
 const router = Router();
 
 // POST /api/flags
-router.post(
-  '/',
-  validateBody(createFlagSchema),
-  async (req, res, next) => {
-    try {
-      const flag = await flagService.createFlag(
-        getProjectId(req),
-        req.body as CreateFlagRequest,
-        getUser(req),
-      );
-      res.status(201).json(flag);
-    } catch (err) {
-      next(err);
-    }
-  },
-);
+router.post('/', validateBody(createFlagSchema), async (req, res, next) => {
+  try {
+    const flag = await flagService.createFlag(
+      getProjectId(req),
+      req.body as CreateFlagRequest,
+      getUser(req),
+    );
+    res.status(201).json(flag);
+  } catch (err) {
+    next(err);
+  }
+});
 
 // GET /api/flags
 router.get('/', async (req, res, next) => {

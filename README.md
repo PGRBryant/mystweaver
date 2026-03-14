@@ -4,16 +4,16 @@ An open-source, self-hosted feature flag and experimentation platform. A product
 
 ## Development Status
 
-| Phase       | Description                                                                                          | Status                 |
-| ----------- | ---------------------------------------------------------------------------------------------------- | ---------------------- |
-| **Phase 1** | Foundation — SDK key management, flag CRUD, evaluation engine, SSE streaming, event ingestion        | **Complete**           |
-| **Phase 2** | Admin Interface — authentication, flag management UI, audit log                                      | **Complete**           |
-| **Phase 3** | Experimentation — A/B testing, statistical results engine, live results UI                           | **Complete**           |
-| **Phase 4** | SDK Package — `@mystweaver/sdk-js` for JS/TS (browser + Node)                                        | **Complete**           |
-| **Phase 5** | Production Readiness — Terraform, CI/CD, observability, security hardening                           | **Complete**           |
-| **Phase 6** | Scale & Efficiency — local SDK evaluation, Redis elimination, session lifecycle, near-zero idle cost | **Complete**           |
-| **Phase 7** | Event Pipeline — Go ingestion service, BigQuery analytics, pre-aggregated results                    | Not started            |
-| **Phase 8** | Global Reach — multi-region sync, stale-while-revalidate, flag versioning                            | Not started            |
+| Phase       | Description                                                                                          | Status       |
+| ----------- | ---------------------------------------------------------------------------------------------------- | ------------ |
+| **Phase 1** | Foundation — SDK key management, flag CRUD, evaluation engine, SSE streaming, event ingestion        | **Complete** |
+| **Phase 2** | Admin Interface — authentication, flag management UI, audit log                                      | **Complete** |
+| **Phase 3** | Experimentation — A/B testing, statistical results engine, live results UI                           | **Complete** |
+| **Phase 4** | SDK Package — `@mystweaver/sdk-js` for JS/TS (browser + Node)                                        | **Complete** |
+| **Phase 5** | Production Readiness — Terraform, CI/CD, observability, security hardening                           | **Complete** |
+| **Phase 6** | Scale & Efficiency — local SDK evaluation, Redis elimination, session lifecycle, near-zero idle cost | **Complete** |
+| **Phase 7** | Event Pipeline — Go ingestion service, BigQuery analytics, pre-aggregated results                    | Not started  |
+| **Phase 8** | Global Reach — multi-region sync, stale-while-revalidate, flag versioning                            | Not started  |
 
 See [ROADMAP.md](ROADMAP.md) for the full engineering roadmap with milestones, dependency graph, and definition of done for each item.
 
@@ -49,11 +49,11 @@ See [ROADMAP.md](ROADMAP.md) for the full engineering roadmap with milestones, d
 
 **SDK routes** (authenticated via `Authorization: Bearer <sdk-key>`):
 
-| Method | Endpoint             | Description                          |
-| ------ | -------------------- | ------------------------------------ |
-| `POST` | `/sdk/evaluate`      | Evaluate a single flag               |
-| `POST` | `/sdk/evaluate/bulk` | Evaluate up to 50 flags              |
-| `GET`  | `/sdk/stream`        | SSE stream of real-time flag updates |
+| Method | Endpoint             | Description                           |
+| ------ | -------------------- | ------------------------------------- |
+| `POST` | `/sdk/evaluate`      | Evaluate a single flag                |
+| `POST` | `/sdk/evaluate/bulk` | Evaluate up to 50 flags               |
+| `GET`  | `/sdk/stream`        | SSE stream of real-time flag updates  |
 | `GET`  | `/sdk/flags`         | Bulk flag config for local evaluation |
 | `POST` | `/sdk/events`        | Ingest evaluation and metric events   |
 

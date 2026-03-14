@@ -81,7 +81,9 @@ const providers: Record<string, AuthProvider> = {
 export function getAuthProvider(name: string): AuthProvider {
   const provider = providers[name];
   if (!provider) {
-    throw new Error(`Unknown AUTH_PROVIDER: "${name}". Valid options: ${Object.keys(providers).join(', ')}`);
+    throw new Error(
+      `Unknown AUTH_PROVIDER: "${name}". Valid options: ${Object.keys(providers).join(', ')}`,
+    );
   }
   return provider;
 }

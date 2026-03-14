@@ -19,7 +19,11 @@ describe('HttpClient', () => {
       json: () => Promise.resolve({ value: true }),
     });
 
-    const client = new HttpClient('https://api.example.com', () => Promise.resolve('test-key'), 5000);
+    const client = new HttpClient(
+      'https://api.example.com',
+      () => Promise.resolve('test-key'),
+      5000,
+    );
     const result = await client.post('/sdk/evaluate', { flagKey: 'my-flag' });
 
     expect(fetchMock).toHaveBeenCalledOnce();
@@ -51,7 +55,11 @@ describe('HttpClient', () => {
       text: () => Promise.resolve('Unauthorized'),
     });
 
-    const client = new HttpClient('https://api.example.com', () => Promise.resolve('bad-key'), 5000);
+    const client = new HttpClient(
+      'https://api.example.com',
+      () => Promise.resolve('bad-key'),
+      5000,
+    );
     await expect(client.post('/sdk/evaluate', {})).rejects.toThrow(HttpError);
 
     try {

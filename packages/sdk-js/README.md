@@ -32,11 +32,10 @@ const timer = await client.value('game.task-timer-seconds', user, 8);
 const tierWeights = await client.json('game.tier-weights', user, { common: 1 });
 
 // Bulk evaluation (single request)
-const flags = await client.evaluateAll([
-  'powerups.jetpack-enabled',
-  'game.task-timer-seconds',
-  'game.sabotage-mode',
-], user);
+const flags = await client.evaluateAll(
+  ['powerups.jetpack-enabled', 'game.task-timer-seconds', 'game.sabotage-mode'],
+  user,
+);
 
 // Clean up
 await client.close();
@@ -46,16 +45,17 @@ await client.close();
 
 ```typescript
 const client = new MystweaverClient({
-  apiKey: 'mw_sdk_live_...',       // Required — your SDK key
-  baseUrl: 'https://...',          // Required — API URL
-  defaults: {                      // Fallback values when API is unreachable
+  apiKey: 'mw_sdk_live_...', // Required — your SDK key
+  baseUrl: 'https://...', // Required — API URL
+  defaults: {
+    // Fallback values when API is unreachable
     'game.task-timer-seconds': 8,
     'powerups.jetpack-enabled': true,
   },
-  streaming: true,                 // Enable SSE for real-time flag updates
-  flushInterval: 5000,             // Event batch flush interval (ms)
-  flushSize: 20,                   // Max events per batch before auto-flush
-  timeout: 5000,                   // HTTP request timeout (ms)
+  streaming: true, // Enable SSE for real-time flag updates
+  flushInterval: 5000, // Event batch flush interval (ms)
+  flushSize: 20, // Max events per batch before auto-flush
+  timeout: 5000, // HTTP request timeout (ms)
 });
 ```
 
@@ -154,28 +154,28 @@ client.reset({ 'game.task-timer-seconds': 8 });
 
 ### `MystweaverClient`
 
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `flag(key, context)` | `Promise<boolean>` | Evaluate a boolean flag |
-| `value(key, context, default)` | `Promise<T>` | Evaluate a flag with typed fallback |
-| `json(key, context, default)` | `Promise<T>` | Evaluate a JSON flag |
-| `evaluateAll(keys, context)` | `Promise<Record<string, unknown>>` | Bulk evaluate multiple flags |
-| `track(event, userId, properties?)` | `void` | Track a metric event (batched) |
-| `onFlagChange(key, listener)` | `() => void` | Subscribe to flag changes (returns unsub) |
-| `onEvent(listener)` | `() => void` | Subscribe to all SSE events (returns unsub) |
-| `flush()` | `Promise<void>` | Flush pending events |
-| `close()` | `Promise<void>` | Flush events, close SSE, release resources |
+| Method                              | Returns                            | Description                                 |
+| ----------------------------------- | ---------------------------------- | ------------------------------------------- |
+| `flag(key, context)`                | `Promise<boolean>`                 | Evaluate a boolean flag                     |
+| `value(key, context, default)`      | `Promise<T>`                       | Evaluate a flag with typed fallback         |
+| `json(key, context, default)`       | `Promise<T>`                       | Evaluate a JSON flag                        |
+| `evaluateAll(keys, context)`        | `Promise<Record<string, unknown>>` | Bulk evaluate multiple flags                |
+| `track(event, userId, properties?)` | `void`                             | Track a metric event (batched)              |
+| `onFlagChange(key, listener)`       | `() => void`                       | Subscribe to flag changes (returns unsub)   |
+| `onEvent(listener)`                 | `() => void`                       | Subscribe to all SSE events (returns unsub) |
+| `flush()`                           | `Promise<void>`                    | Flush pending events                        |
+| `close()`                           | `Promise<void>`                    | Flush events, close SSE, release resources  |
 
 ### `MystweaverMockClient`
 
 Same evaluation/tracking API as `MystweaverClient`, plus:
 
-| Method | Description |
-|--------|-------------|
-| `override(key, value)` | Set a flag value at runtime |
-| `simulateFlagChange(key, value)` | Fire `onFlagChange` listeners |
-| `reset(flags?)` | Reset flags and clear tracked events |
-| `trackedEvents` | Array of all `track()` calls |
+| Method                           | Description                          |
+| -------------------------------- | ------------------------------------ |
+| `override(key, value)`           | Set a flag value at runtime          |
+| `simulateFlagChange(key, value)` | Fire `onFlagChange` listeners        |
+| `reset(flags?)`                  | Reset flags and clear tracked events |
+| `trackedEvents`                  | Array of all `track()` calls         |
 
 ## Exports
 

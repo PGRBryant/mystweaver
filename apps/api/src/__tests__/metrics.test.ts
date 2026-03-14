@@ -42,9 +42,7 @@ describe('Gauge', () => {
   it('supports set with labels', () => {
     metrics.experimentSampleSize.set({ experimentId: 'exp-1', variant: 'control' }, 42);
     const output = collectMetrics();
-    expect(output).toContain(
-      'experiment_sample_size{experimentId="exp-1",variant="control"} 42',
-    );
+    expect(output).toContain('experiment_sample_size{experimentId="exp-1",variant="control"} 42');
   });
 });
 

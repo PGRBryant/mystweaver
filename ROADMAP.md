@@ -36,7 +36,9 @@ const client = new MystweaverClient({
 // Flags evaluate locally (~0ms) — no network round-trip per check
 const enabled = await client.flag('powerups.jetpack-enabled', { id: 'player-1', attributes: {} });
 client.track('room.completed', 'player-1', { floor: 7 });
-client.onFlagChange('game.task-timer-seconds', (newVal, oldVal) => { /* update game */ });
+client.onFlagChange('game.task-timer-seconds', (newVal, oldVal) => {
+  /* update game */
+});
 
 await client.close();
 ```

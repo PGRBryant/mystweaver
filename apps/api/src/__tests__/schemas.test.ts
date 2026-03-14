@@ -94,9 +94,7 @@ describe('createFlagSchema', () => {
       name: 'X',
       type: 'boolean',
       defaultValue: true,
-      rules: [
-        { id: 'r1', description: '', conditions: [], value: true, rolloutPercentage: 150 },
-      ],
+      rules: [{ id: 'r1', description: '', conditions: [], value: true, rolloutPercentage: 150 }],
     });
     expect(result.success).toBe(false);
   });

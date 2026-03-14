@@ -5,7 +5,14 @@ vi.mock('../services/pubsub-service', () => ({
   publishFlagChange: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { createFlag, getFlag, listFlags, updateFlag, replaceFlag, deleteFlag } from '../services/flag-service';
+import {
+  createFlag,
+  getFlag,
+  listFlags,
+  updateFlag,
+  replaceFlag,
+  deleteFlag,
+} from '../services/flag-service';
 import { createTestProjectId, cleanupProject } from './setup';
 
 const pid = createTestProjectId('flags');
@@ -119,7 +126,12 @@ describe('flag-service (integration)', () => {
   // ── updateFlag ──────────────────────────────────────────────────────────
 
   it('updates flag fields', async () => {
-    await createFlag(pid, { key: 'update-me', name: 'Original', type: 'boolean', defaultValue: true });
+    await createFlag(pid, {
+      key: 'update-me',
+      name: 'Original',
+      type: 'boolean',
+      defaultValue: true,
+    });
 
     const updated = await updateFlag(pid, 'update-me', { name: 'Updated', enabled: false });
     expect(updated.name).toBe('Updated');
@@ -132,11 +144,16 @@ describe('flag-service (integration)', () => {
   });
 
   it('rejects defaultValue type mismatch on update', async () => {
-    await createFlag(pid, { key: 'typed-flag', name: 'Typed', type: 'boolean', defaultValue: true });
+    await createFlag(pid, {
+      key: 'typed-flag',
+      name: 'Typed',
+      type: 'boolean',
+      defaultValue: true,
+    });
 
-    await expect(
-      updateFlag(pid, 'typed-flag', { defaultValue: 'not-a-bool' }),
-    ).rejects.toThrow('defaultValue must be a boolean');
+    await expect(updateFlag(pid, 'typed-flag', { defaultValue: 'not-a-bool' })).rejects.toThrow(
+      'defaultValue must be a boolean',
+    );
   });
 
   it('accepts matching defaultValue type on update', async () => {
@@ -151,7 +168,12 @@ describe('flag-service (integration)', () => {
   });
 
   it('rejects update to soft-deleted flag', async () => {
-    await createFlag(pid, { key: 'deleted-flag', name: 'Soon gone', type: 'boolean', defaultValue: true });
+    await createFlag(pid, {
+      key: 'deleted-flag',
+      name: 'Soon gone',
+      type: 'boolean',
+      defaultValue: true,
+    });
     await deleteFlag(pid, 'deleted-flag');
 
     await expect(updateFlag(pid, 'deleted-flag', { name: 'Revived' })).rejects.toThrow('not found');
@@ -184,14 +206,24 @@ describe('flag-service (integration)', () => {
 
   it('rejects replace on non-existent flag', async () => {
     await expect(
-      replaceFlag(pid, 'no-such-flag', { key: 'no-such-flag', name: 'X', type: 'boolean', defaultValue: true }),
+      replaceFlag(pid, 'no-such-flag', {
+        key: 'no-such-flag',
+        name: 'X',
+        type: 'boolean',
+        defaultValue: true,
+      }),
     ).rejects.toThrow('not found');
   });
 
   // ── deleteFlag ──────────────────────────────────────────────────────────
 
   it('soft-deletes a flag (getFlag returns null)', async () => {
-    await createFlag(pid, { key: 'soft-del', name: 'Delete Me', type: 'boolean', defaultValue: true });
+    await createFlag(pid, {
+      key: 'soft-del',
+      name: 'Delete Me',
+      type: 'boolean',
+      defaultValue: true,
+    });
 
     await deleteFlag(pid, 'soft-del');
 

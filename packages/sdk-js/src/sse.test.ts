@@ -47,9 +47,7 @@ describe('SSEManager', () => {
     mgr.connect();
 
     expect(MockEventSource.instances).toHaveLength(1);
-    expect(MockEventSource.instances[0].url).toBe(
-      'https://api.test.com/sdk/stream?apiKey=my-key',
-    );
+    expect(MockEventSource.instances[0].url).toBe('https://api.test.com/sdk/stream?apiKey=my-key');
     mgr.close();
   });
 

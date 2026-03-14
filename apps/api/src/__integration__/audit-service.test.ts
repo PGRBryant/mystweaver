@@ -44,9 +44,24 @@ describe('audit-service (integration)', () => {
   });
 
   it('filters audit records by flagKey', async () => {
-    await writeAuditRecord({ projectId: pid, action: 'flag.created', performedBy: 'a', flagKey: 'flag-1' });
-    await writeAuditRecord({ projectId: pid, action: 'flag.created', performedBy: 'a', flagKey: 'flag-2' });
-    await writeAuditRecord({ projectId: pid, action: 'flag.updated', performedBy: 'a', flagKey: 'flag-1' });
+    await writeAuditRecord({
+      projectId: pid,
+      action: 'flag.created',
+      performedBy: 'a',
+      flagKey: 'flag-1',
+    });
+    await writeAuditRecord({
+      projectId: pid,
+      action: 'flag.created',
+      performedBy: 'a',
+      flagKey: 'flag-2',
+    });
+    await writeAuditRecord({
+      projectId: pid,
+      action: 'flag.updated',
+      performedBy: 'a',
+      flagKey: 'flag-1',
+    });
 
     const records = await listAuditRecords({ projectId: pid, flagKey: 'flag-1' });
     expect(records).toHaveLength(2);
@@ -54,9 +69,24 @@ describe('audit-service (integration)', () => {
   });
 
   it('filters audit records by action', async () => {
-    await writeAuditRecord({ projectId: pid, action: 'flag.created', performedBy: 'a', flagKey: 'flag-1' });
-    await writeAuditRecord({ projectId: pid, action: 'flag.deleted', performedBy: 'a', flagKey: 'flag-1' });
-    await writeAuditRecord({ projectId: pid, action: 'flag.created', performedBy: 'b', flagKey: 'flag-2' });
+    await writeAuditRecord({
+      projectId: pid,
+      action: 'flag.created',
+      performedBy: 'a',
+      flagKey: 'flag-1',
+    });
+    await writeAuditRecord({
+      projectId: pid,
+      action: 'flag.deleted',
+      performedBy: 'a',
+      flagKey: 'flag-1',
+    });
+    await writeAuditRecord({
+      projectId: pid,
+      action: 'flag.created',
+      performedBy: 'b',
+      flagKey: 'flag-2',
+    });
 
     const records = await listAuditRecords({ projectId: pid, action: 'flag.created' });
     expect(records).toHaveLength(2);
@@ -64,8 +94,18 @@ describe('audit-service (integration)', () => {
   });
 
   it('filters audit records by performedBy', async () => {
-    await writeAuditRecord({ projectId: pid, action: 'flag.created', performedBy: 'alice', flagKey: 'f1' });
-    await writeAuditRecord({ projectId: pid, action: 'flag.created', performedBy: 'bob', flagKey: 'f2' });
+    await writeAuditRecord({
+      projectId: pid,
+      action: 'flag.created',
+      performedBy: 'alice',
+      flagKey: 'f1',
+    });
+    await writeAuditRecord({
+      projectId: pid,
+      action: 'flag.created',
+      performedBy: 'bob',
+      flagKey: 'f2',
+    });
 
     const records = await listAuditRecords({ projectId: pid, performedBy: 'alice' });
     expect(records).toHaveLength(1);
@@ -74,7 +114,12 @@ describe('audit-service (integration)', () => {
 
   it('respects limit parameter', async () => {
     for (let i = 0; i < 5; i++) {
-      await writeAuditRecord({ projectId: pid, action: 'flag.created', performedBy: 'a', flagKey: `f-${i}` });
+      await writeAuditRecord({
+        projectId: pid,
+        action: 'flag.created',
+        performedBy: 'a',
+        flagKey: `f-${i}`,
+      });
     }
 
     const records = await listAuditRecords({ projectId: pid, limit: 3 });
@@ -83,7 +128,12 @@ describe('audit-service (integration)', () => {
 
   it('flag CRUD operations produce audit records via fire-and-forget', async () => {
     // createFlag calls writeAuditRecord as fire-and-forget (no await).
-    await createFlag(pid, { key: 'audited-flag', name: 'Audited', type: 'boolean', defaultValue: true });
+    await createFlag(pid, {
+      key: 'audited-flag',
+      name: 'Audited',
+      type: 'boolean',
+      defaultValue: true,
+    });
 
     // Wait for the fire-and-forget audit write to settle.
     await new Promise((resolve) => setTimeout(resolve, 2000));

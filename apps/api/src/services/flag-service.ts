@@ -256,9 +256,7 @@ export async function deleteFlag(
  * so the SDK can fetch the entire ruleset in one read.
  */
 export async function rebuildFlagConfig(projectId: string): Promise<void> {
-  const snapshot = await flagsCollection(projectId)
-    .where('deletedAt', '==', null)
-    .get();
+  const snapshot = await flagsCollection(projectId).where('deletedAt', '==', null).get();
 
   const flags: Record<string, unknown> = {};
   for (const doc of snapshot.docs) {

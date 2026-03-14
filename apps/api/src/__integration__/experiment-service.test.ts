@@ -84,7 +84,11 @@ describe('experiment-service (integration)', () => {
       { key: 'b', value: 2, weight: 30 },
     ];
     await expect(
-      createExperiment(pid, { name: 'Bad', flagKey: 'exp-flag-bad', variants: badVariants, metric: 'm' }, 'tester'),
+      createExperiment(
+        pid,
+        { name: 'Bad', flagKey: 'exp-flag-bad', variants: badVariants, metric: 'm' },
+        'tester',
+      ),
     ).rejects.toThrow('sum to 100');
   });
 
@@ -110,8 +114,16 @@ describe('experiment-service (integration)', () => {
 
   it('lists experiments', async () => {
     await seedFlag('exp-flag-03');
-    await createExperiment(pid, { name: 'E1', flagKey: 'exp-flag-03', variants, metric: 'm' }, 'tester');
-    await createExperiment(pid, { name: 'E2', flagKey: 'exp-flag-03', variants, metric: 'm' }, 'tester');
+    await createExperiment(
+      pid,
+      { name: 'E1', flagKey: 'exp-flag-03', variants, metric: 'm' },
+      'tester',
+    );
+    await createExperiment(
+      pid,
+      { name: 'E2', flagKey: 'exp-flag-03', variants, metric: 'm' },
+      'tester',
+    );
 
     const list = await listExperiments(pid);
     expect(list).toHaveLength(2);
@@ -132,7 +144,9 @@ describe('experiment-service (integration)', () => {
   });
 
   it('rejects update to non-existent experiment', async () => {
-    await expect(updateExperiment(pid, 'no-id', { name: 'X' }, 'tester')).rejects.toThrow('not found');
+    await expect(updateExperiment(pid, 'no-id', { name: 'X' }, 'tester')).rejects.toThrow(
+      'not found',
+    );
   });
 
   // ── deleteExperiment ────────────────────────────────────────────────────
@@ -229,6 +243,8 @@ describe('experiment-service (integration)', () => {
     );
     await startExperiment(pid, exp.id, 'tester');
 
-    await expect(concludeExperiment(pid, exp.id, 'nonexistent', 'tester')).rejects.toThrow('not found');
+    await expect(concludeExperiment(pid, exp.id, 'nonexistent', 'tester')).rejects.toThrow(
+      'not found',
+    );
   });
 });
