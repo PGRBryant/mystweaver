@@ -1,17 +1,6 @@
 # Mystweaver
 
-<div align="center">
-
-**An open-source, self-hosted feature flag and experimentation platform**
-
-A production-ready alternative to LaunchDarkly, built for teams that want full control over their feature flag infrastructure.
-
-[Roadmap](ROADMAP.md) · [Quick Start](#quick-start) · [Contributing](#contributing) · [License](LICENSE)
-
-[![CI](https://github.com/PGRBRyant/mystweaver/actions/workflows/ci.yml/badge.svg)](https://github.com/PGRBRyant/mystweaver/actions)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-
-</div>
+An open-source, self-hosted feature flag and experimentation platform. A production-ready alternative to LaunchDarkly, built for teams that want full control over their feature flag infrastructure.
 
 ## Development Status
 
@@ -278,8 +267,8 @@ npm run clean                # Clean build artifacts
 
 ## Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, commit guidelines, and PR process.
+Pull requests are welcome. Open an issue first for significant changes.
 
 ## License
 
-Mystweaver is licensed under the [Apache License 2.0](LICENSE).
+Apache 2.0 — see [LICENSE](LICENSE).
