@@ -1,5 +1,36 @@
 import type { Request, Response, NextFunction } from 'express';
 import { validateSDKKey } from '../services/sdk-key-service';
+import { logger } from '../logger';
+
+// ── Verika observation mode ───────────────────────────────────────────────────
+// Shadow-validates incoming tokens so we can observe what Verika would decide
+// before enforcement is turned on. Never changes actual auth outcome.
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _verikaObserver: { validateServiceToken(t: string): Promise<{ serviceId: string }> } | null =
+  null;
+
+/**
+ * Initialize the Verika observer. Call once at startup.
+ * Fails gracefully if @internal/verika is not installed or misconfigured.
+ */
+export async function initVerikaObserver(endpoint: string, serviceId: string): Promise<void> {
+  if (!endpoint || !serviceId) return;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mod = await import('@internal/verika' as any);
+    const client = new mod.VerikaClient({
+      service: serviceId,
+      targetService: 'verika',
+      verikaEndpoint: endpoint,
+    });
+    await client.ready();
+    _verikaObserver = client;
+    logger.info({ serviceId }, 'verika:observer-ready');
+  } catch (err) {
+    logger.warn({ err }, 'verika:observer-unavailable');
+  }
+}
 
 // Extend Express Request to carry SDK context.
 declare global {
@@ -38,8 +69,18 @@ export async function sdkAuth(req: Request, res: Response, next: NextFunction): 
     return;
   }
 
-  // TODO(verika): If rawKey is a Verika JWT (identifiable by header format or prefix),
-  // validate it with the Verika provider instead of the SDK key lookup below.
+  // Observation mode: shadow-validate Verika JWTs without changing auth behavior.
+  if (rawKey.startsWith('eyJ') && _verikaObserver !== null) {
+    _verikaObserver
+      .validateServiceToken(rawKey)
+      .then((identity) =>
+        logger.info({ serviceId: identity.serviceId, mode: 'observation' }, 'verika:shadow-allow'),
+      )
+      .catch((err: Error) =>
+        logger.info({ code: err.message, mode: 'observation' }, 'verika:shadow-deny'),
+      );
+  }
+
   const projectId = await validateSDKKey(rawKey);
 
   if (!projectId) {
