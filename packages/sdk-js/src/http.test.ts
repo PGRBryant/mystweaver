@@ -19,7 +19,7 @@ describe('HttpClient', () => {
       json: () => Promise.resolve({ value: true }),
     });
 
-    const client = new HttpClient('https://api.example.com', 'test-key', 5000);
+    const client = new HttpClient('https://api.example.com', () => Promise.resolve('test-key'), 5000);
     const result = await client.post('/sdk/evaluate', { flagKey: 'my-flag' });
 
     expect(fetchMock).toHaveBeenCalledOnce();
@@ -38,7 +38,7 @@ describe('HttpClient', () => {
       json: () => Promise.resolve({}),
     });
 
-    const client = new HttpClient('https://api.example.com///', 'key', 5000);
+    const client = new HttpClient('https://api.example.com///', () => Promise.resolve('key'), 5000);
     await client.post('/path', {});
 
     expect(fetchMock.mock.calls[0][0]).toBe('https://api.example.com/path');
@@ -51,7 +51,7 @@ describe('HttpClient', () => {
       text: () => Promise.resolve('Unauthorized'),
     });
 
-    const client = new HttpClient('https://api.example.com', 'bad-key', 5000);
+    const client = new HttpClient('https://api.example.com', () => Promise.resolve('bad-key'), 5000);
     await expect(client.post('/sdk/evaluate', {})).rejects.toThrow(HttpError);
 
     try {
@@ -72,7 +72,7 @@ describe('HttpClient', () => {
       });
     });
 
-    const client = new HttpClient('https://api.example.com', 'key', 50);
+    const client = new HttpClient('https://api.example.com', () => Promise.resolve('key'), 50);
     await expect(client.post('/slow', {})).rejects.toThrow('aborted');
   });
 });
