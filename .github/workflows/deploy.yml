@@ -188,7 +188,7 @@ jobs:
 
           echo "Web URL: $WEB_URL"
 
-          STATUS=$(curl -s -o /dev/null -w '%{http_code}' "$WEB_URL/" || true)
+          STATUS=$(curl -s -o /dev/null -w '%{http_code}' "$WEB_URL/health" || true)
           if [ "$STATUS" = "200" ]; then
             echo "Admin UI health check passed"
           else
