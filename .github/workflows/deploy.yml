@@ -183,17 +183,18 @@ jobs:
 
       - name: Smoke test Admin UI
         run: |
-          WEB_URL=$(gcloud run services describe mystweaver-web \
+          # The web service has load-balancer-only ingress, so HTTP curl from
+          # GitHub Actions is blocked. Check Cloud Run's Ready condition instead.
+          READY=$(gcloud run services describe mystweaver-web \
             --region=${{ secrets.GCP_REGION }} \
-            --format='value(status.url)')
+            --format='value(status.conditions[0].status)')
 
-          echo "Web URL: $WEB_URL"
+          echo "Admin UI Ready condition: $READY"
 
-          STATUS=$(curl -s -o /dev/null -w '%{http_code}' "$WEB_URL/health" || true)
-          if [ "$STATUS" = "200" ]; then
-            echo "Admin UI health check passed"
+          if [ "$READY" = "True" ]; then
+            echo "Admin UI service is ready"
           else
-            echo "Admin UI returned status $STATUS"
+            echo "Admin UI service not ready (condition=$READY)"
             exit 1
           fi
 
