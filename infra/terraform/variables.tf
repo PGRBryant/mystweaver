@@ -48,3 +48,21 @@ variable "iap_oauth_client_secret" {
   sensitive   = true
 }
 
+variable "verika_domain" {
+  description = "Domain of the Verika identity service (e.g. verika.example.com). Added to CORS allowed origins."
+  type        = string
+  default     = ""
+}
+
+variable "verika_service_id" {
+  description = "Service ID assigned to Mystweaver in Verika's service registry (VERIKA_SERVICE_ID env var)"
+  type        = string
+  default     = ""
+}
+
+variable "auth_provider" {
+  description = "Auth provider for admin endpoints: 'google-iap' (default), 'verika', or 'dev'"
+  type        = string
+  default     = "google-iap"
+}
+

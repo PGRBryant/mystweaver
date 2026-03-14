@@ -16,6 +16,12 @@ declare global {
  *   2. ?apiKey=<sdk-key> query parameter (for EventSource/SSE which can't set headers)
  *
  * On success, sets req.sdkProjectId to the key's projectId.
+ *
+ * TODO(verika): Phase 1 — also accept a Verika-issued service token here.
+ * When a consuming service (e.g. Room 404) presents a Verika identity token
+ * instead of a raw SDK key, validate it via @internal/verika and derive the
+ * projectId from the token's service claims rather than the sdk-keys collection.
+ * The fallback (SDK key path) remains unchanged for backwards compatibility.
  */
 export async function sdkAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
   const header = req.headers.authorization;
@@ -32,6 +38,8 @@ export async function sdkAuth(req: Request, res: Response, next: NextFunction): 
     return;
   }
 
+  // TODO(verika): If rawKey is a Verika JWT (identifiable by header format or prefix),
+  // validate it with the Verika provider instead of the SDK key lookup below.
   const projectId = await validateSDKKey(rawKey);
 
   if (!projectId) {

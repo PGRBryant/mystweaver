@@ -1,13 +1,15 @@
 /** Minimal fetch wrapper with timeout and auth header injection. */
 export class HttpClient {
   private baseUrl: string;
-  private apiKey: string;
   private timeout: number;
+  // TODO(verika): tokenResolver abstracts the auth source so Verika tokens and
+  // static SDK keys are handled identically by the HTTP layer.
+  private readonly tokenResolver: () => Promise<string>;
 
-  constructor(baseUrl: string, apiKey: string, timeout: number) {
+  constructor(baseUrl: string, tokenResolver: () => Promise<string>, timeout: number) {
     // Strip trailing slash for consistent URL joining.
     this.baseUrl = baseUrl.replace(/\/+$/, '');
-    this.apiKey = apiKey;
+    this.tokenResolver = tokenResolver;
     this.timeout = timeout;
   }
 
@@ -16,10 +18,11 @@ export class HttpClient {
     const timer = setTimeout(() => controller.abort(), this.timeout);
 
     try {
+      const token = await this.tokenResolver();
       const res = await fetch(`${this.baseUrl}${path}`, {
         method: 'GET',
         headers: {
-          Authorization: `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${token}`,
         },
         signal: controller.signal,
       });
@@ -39,11 +42,12 @@ export class HttpClient {
     const timer = setTimeout(() => controller.abort(), this.timeout);
 
     try {
+      const token = await this.tokenResolver();
       const res = await fetch(`${this.baseUrl}${path}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(body),
         signal: controller.signal,

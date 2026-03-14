@@ -1,42 +1,44 @@
 import type { Request, Response, NextFunction } from 'express';
 import { config } from '../config';
+import { getAuthProvider } from './auth-providers';
 
 // Extend Express Request to carry admin user context.
 declare global {
   namespace Express {
     interface Request {
-      user?: { email: string };
+      user?: { email: string; serviceAccount?: string };
     }
   }
 }
 
+// Resolve provider once at module load.
+const provider = getAuthProvider(config.authProvider);
+
 /**
  * Admin authentication middleware.
  *
- * Production: reads Google IAP headers set by the IAP proxy.
- *   - `x-goog-authenticated-user-email` contains "accounts.google.com:<email>"
- *   - IAP validates the JWT before forwarding, so we trust the header.
+ * Delegates identity resolution to the configured AUTH_PROVIDER:
+ *   google-iap  — Google IAP headers (production default)
+ *   dev         — x-dev-user header / dev@localhost fallback (local only)
+ *   verika      — Verika JWT verification (set AUTH_PROVIDER=verika)
  *
- * Local dev: accepts `x-dev-user` header or falls back to "dev@localhost".
+ * On success, sets req.user. On failure, returns 401.
+ *
+ * TODO(verika): When AUTH_PROVIDER=verika, this delegates to verikaProvider.resolve()
+ * which currently returns null (stub). Implement verikaProvider in auth-providers.ts
+ * once Verika is deployed and @internal/verika SDK is available.
  */
-export function adminAuth(req: Request, res: Response, next: NextFunction): void {
-  if (config.nodeEnv === 'production') {
-    const iapEmail = req.headers['x-goog-authenticated-user-email'];
-
-    if (!iapEmail || typeof iapEmail !== 'string') {
-      res.status(401).json({ error: 'Unauthenticated: missing IAP headers' });
+export async function adminAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    // TODO(verika): Identity resolution point. Switch provider by setting AUTH_PROVIDER=verika.
+    const identity = await provider.resolve(req);
+    if (!identity) {
+      res.status(401).json({ error: 'Unauthenticated' });
       return;
     }
-
-    // IAP prefixes with "accounts.google.com:" — strip it.
-    const email = iapEmail.replace(/^accounts\.google\.com:/, '');
-    req.user = { email };
-  } else {
-    // Local dev: trust x-dev-user header or fall back to dev identity.
-    const devUser = req.headers['x-dev-user'];
-    const email = typeof devUser === 'string' && devUser ? devUser : 'dev@localhost';
-    req.user = { email };
+    req.user = identity;
+    next();
+  } catch (err) {
+    next(err);
   }
-
-  next();
 }

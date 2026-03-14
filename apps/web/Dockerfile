@@ -4,7 +4,7 @@
 ###############################################
 # Stage 1: deps — install all workspace deps  #
 ###############################################
-FROM node:20-alpine AS deps
+FROM node:20.18-alpine3.21 AS deps
 WORKDIR /app
 
 COPY package.json package-lock.json ./
@@ -17,7 +17,7 @@ RUN npm ci --include=dev
 ###############################################
 # Stage 2: build — compile React app          #
 ###############################################
-FROM node:20-alpine AS build
+FROM node:20.18-alpine3.21 AS build
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
@@ -36,7 +36,7 @@ RUN npm run build --workspace=@mystweaver/web
 ###############################################
 # Stage 3: runner — nginx serves static files #
 ###############################################
-FROM nginx:1.27-alpine AS runner
+FROM nginx:1.27.4-alpine AS runner
 
 # Remove default nginx config
 RUN rm /etc/nginx/conf.d/default.conf

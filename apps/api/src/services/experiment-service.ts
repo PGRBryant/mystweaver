@@ -1,5 +1,5 @@
 import { FieldValue } from '@google-cloud/firestore';
-import { experimentsCollection, flagsCollection } from '../db/firestore';
+import { db, experimentsCollection, flagsCollection } from '../db/firestore';
 import { writeAuditRecord } from './audit-service';
 import { invalidateFlag } from './cache-service';
 import { rebuildFlagConfig } from './flag-service';
@@ -172,20 +172,21 @@ export async function startExperiment(
     enabled: flagData.enabled,
   };
 
-  // Build experiment rules and apply to the flag.
+  // Build experiment rules and apply to the flag atomically.
   const experimentRules = buildExperimentRules(id, exp.variants);
 
-  await flagDocRef.update({
-    rules: experimentRules,
-    enabled: true,
-    updatedAt: FieldValue.serverTimestamp(),
-  });
-
-  await docRef.update({
-    status: 'running',
-    startedAt: FieldValue.serverTimestamp(),
-    previousFlagState,
-    updatedAt: FieldValue.serverTimestamp(),
+  await db.runTransaction(async (tx) => {
+    tx.update(flagDocRef, {
+      rules: experimentRules,
+      enabled: true,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    tx.update(docRef, {
+      status: 'running',
+      startedAt: FieldValue.serverTimestamp(),
+      previousFlagState,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
   });
 
   await invalidateFlag(projectId, exp.flagKey);
@@ -220,21 +221,22 @@ export async function stopExperiment(
     throw new AppError(`Cannot stop experiment in "${exp.status}" state`, 400);
   }
 
-  // Revert the flag to its pre-experiment state.
+  // Revert the flag and mark experiment stopped atomically.
   const flagDocRef = flagsCollection(projectId).doc(exp.flagKey);
-  if (exp.previousFlagState) {
-    await flagDocRef.update({
-      rules: exp.previousFlagState.rules,
-      defaultValue: exp.previousFlagState.defaultValue,
-      enabled: exp.previousFlagState.enabled,
+  await db.runTransaction(async (tx) => {
+    if (exp.previousFlagState) {
+      tx.update(flagDocRef, {
+        rules: exp.previousFlagState.rules,
+        defaultValue: exp.previousFlagState.defaultValue,
+        enabled: exp.previousFlagState.enabled,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    }
+    tx.update(docRef, {
+      status: 'stopped',
+      stoppedAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });
-  }
-
-  await docRef.update({
-    status: 'stopped',
-    stoppedAt: FieldValue.serverTimestamp(),
-    updatedAt: FieldValue.serverTimestamp(),
   });
 
   await invalidateFlag(projectId, exp.flagKey);
@@ -275,22 +277,23 @@ export async function concludeExperiment(
     throw new AppError(`Variant "${winnerKey}" not found in experiment`, 400);
   }
 
-  // Promote the winning variant: set flag default to winner's value, clear experiment rules.
+  // Promote winning variant and conclude experiment atomically.
   const flagDocRef = flagsCollection(projectId).doc(exp.flagKey);
   const prevState = exp.previousFlagState;
-  await flagDocRef.update({
-    defaultValue: winningVariant.value,
-    rules: prevState?.rules ?? [],
-    enabled: true,
-    updatedAt: FieldValue.serverTimestamp(),
-  });
-
-  await docRef.update({
-    status: 'concluded',
-    winner: winnerKey,
-    stoppedAt: FieldValue.serverTimestamp(),
-    concludedAt: FieldValue.serverTimestamp(),
-    updatedAt: FieldValue.serverTimestamp(),
+  await db.runTransaction(async (tx) => {
+    tx.update(flagDocRef, {
+      defaultValue: winningVariant.value,
+      rules: prevState?.rules ?? [],
+      enabled: true,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    tx.update(docRef, {
+      status: 'concluded',
+      winner: winnerKey,
+      stoppedAt: FieldValue.serverTimestamp(),
+      concludedAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
   });
 
   await invalidateFlag(projectId, exp.flagKey);

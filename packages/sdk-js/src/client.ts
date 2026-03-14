@@ -12,11 +12,38 @@ import type {
   FlagConfigResponse,
   FlagDefinition,
   SSEEvent,
+  VerikaClient,
 } from './types';
 
 const DEFAULT_TIMEOUT = 5_000;
 const DEFAULT_FLUSH_INTERVAL = 5_000;
 const DEFAULT_FLUSH_SIZE = 20;
+
+/**
+ * Build a token resolver that prefers Verika identity tokens and falls back
+ * to the static SDK API key.
+ *
+ * TODO(verika): When @internal/verika is available, `identity.getToken()` will
+ * return a short-lived JWT issued by Verika. Until then, identity is always
+ * absent and the resolver returns the SDK key unchanged.
+ */
+function buildTokenResolver(
+  identity: VerikaClient | undefined,
+  apiKey: string | undefined,
+): () => Promise<string> {
+  return async () => {
+    if (identity) {
+      try {
+        const token = await identity.getToken();
+        if (token) return token;
+      } catch {
+        // Verika unavailable — fall through to SDK key.
+      }
+    }
+    if (!apiKey) throw new Error('MystweaverClient: no apiKey and no identity provided');
+    return apiKey;
+  };
+}
 
 export class MystweaverClient {
   private readonly http: HttpClient;
@@ -32,10 +59,16 @@ export class MystweaverClient {
   private readonly configReady: Promise<void>;
 
   constructor(config: MystweaverConfig) {
+    if (!config.apiKey && !config.identity) {
+      throw new Error('MystweaverClient: provide either apiKey or identity (VerikaClient)');
+    }
+
     const baseUrl = config.baseUrl.replace(/\/+$/, '');
     const timeout = config.timeout ?? DEFAULT_TIMEOUT;
 
-    this.http = new HttpClient(baseUrl, config.apiKey, timeout);
+    // TODO(verika): tokenResolver picks up Verika tokens automatically once identity is wired.
+    const tokenResolver = buildTokenResolver(config.identity, config.apiKey);
+    this.http = new HttpClient(baseUrl, tokenResolver, timeout);
     this.breaker = new CircuitBreaker();
     this.defaults = config.defaults ?? {};
 
@@ -47,7 +80,11 @@ export class MystweaverClient {
     this.events.start();
 
     if (config.streaming) {
-      this.sse = new SSEManager(`${baseUrl}/sdk/stream`, config.apiKey);
+      // TODO(verika): SSE uses ?apiKey= query param (EventSource has no custom header support).
+      // When Verika tokens are used, pre-resolve a token here and pass it to SSEManager.
+      // For Phase 0 this falls back to the static apiKey (or '' if identity-only).
+      const sseKey = config.apiKey ?? '';
+      this.sse = new SSEManager(`${baseUrl}/sdk/stream`, sseKey);
       this.sse.connect();
       // Re-fetch config on any flag change from SSE
       this.sse.onEvent((event) => {

@@ -11,6 +11,7 @@ const router = Router();
 let activeConnections = 0;
 
 // GET /sdk/stream — Server-Sent Events for real-time flag updates
+// TODO(verika): sdkAuth will also accept Verika service tokens once api-key-auth.ts is updated.
 router.get('/', sdkAuth, (req, res) => {
   const projectId = req.sdkProjectId!;
 

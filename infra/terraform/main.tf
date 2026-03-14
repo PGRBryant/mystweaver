@@ -70,6 +70,36 @@ resource "google_firestore_database" "default" {
 resource "google_pubsub_topic" "flag_updates" {
   name = "flag-updates"
 
+  # Retain undelivered messages for 7 days.
+  message_retention_duration = "604800s"
+
+  depends_on = [google_project_service.apis]
+}
+
+# Dead-letter topic for messages that fail after max_delivery_attempts.
+resource "google_pubsub_topic" "flag_updates_dlq" {
+  name = "flag-updates-dlq"
+
+  depends_on = [google_project_service.apis]
+}
+
+# Managed subscription (previously auto-created at runtime).
+resource "google_pubsub_subscription" "flag_updates_api" {
+  name  = "flag-updates-api"
+  topic = google_pubsub_topic.flag_updates.name
+
+  ack_deadline_seconds = 20
+
+  dead_letter_policy {
+    dead_letter_topic     = google_pubsub_topic.flag_updates_dlq.id
+    max_delivery_attempts = 5
+  }
+
+  retry_policy {
+    minimum_backoff = "10s"
+    maximum_backoff = "600s"
+  }
+
   depends_on = [google_project_service.apis]
 }
 
@@ -87,9 +117,15 @@ resource "google_project_iam_member" "api_firestore" {
   member  = "serviceAccount:${google_service_account.api.email}"
 }
 
-resource "google_project_iam_member" "api_pubsub" {
+resource "google_project_iam_member" "api_pubsub_publisher" {
   project = var.project_id
   role    = "roles/pubsub.publisher"
+  member  = "serviceAccount:${google_service_account.api.email}"
+}
+
+resource "google_project_iam_member" "api_pubsub_subscriber" {
+  project = var.project_id
+  role    = "roles/pubsub.subscriber"
   member  = "serviceAccount:${google_service_account.api.email}"
 }
 
@@ -233,7 +269,19 @@ resource "google_cloud_run_v2_service" "api" {
       }
       env {
         name  = "CORS_ORIGINS"
-        value = "https://${var.domain},https://room404.dev,https://*.room404.dev,http://localhost:5173,http://localhost:5174"
+        value = "https://${var.domain},https://room404.dev,https://*.room404.dev${var.verika_domain != "" ? ",https://${var.verika_domain}" : ""},http://localhost:5173,http://localhost:5174"
+      }
+      env {
+        name  = "AUTH_PROVIDER"
+        value = var.auth_provider
+      }
+      env {
+        name  = "VERIKA_ENDPOINT"
+        value = var.verika_domain != "" ? "https://${var.verika_domain}" : ""
+      }
+      env {
+        name  = "VERIKA_SERVICE_ID"
+        value = var.verika_service_id
       }
       env {
         name = "API_SIGNING_KEY"
@@ -247,7 +295,7 @@ resource "google_cloud_run_v2_service" "api" {
 
       startup_probe {
         http_get {
-          path = "/health"
+          path = "/health/live"
           port = 3000
         }
         initial_delay_seconds = 5
@@ -258,7 +306,7 @@ resource "google_cloud_run_v2_service" "api" {
 
       liveness_probe {
         http_get {
-          path = "/health"
+          path = "/health/live"
           port = 3000
         }
         period_seconds    = 30

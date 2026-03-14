@@ -28,6 +28,12 @@ export const config = {
   // Cache
   cacheTtlSeconds: Number(optional('CACHE_TTL_SECONDS', '60')),
 
+  // Auth provider: 'google-iap' (default/prod), 'dev' (local), 'verika' (Verika integration)
+  authProvider: optional(
+    'AUTH_PROVIDER',
+    process.env['NODE_ENV'] === 'production' ? 'google-iap' : 'dev',
+  ),
+
   // CORS
   corsOrigins: optional('CORS_ORIGINS', 'http://localhost:5173,http://localhost:5174')
     .split(',')
@@ -47,4 +53,9 @@ export const config = {
     process.env['NODE_ENV'] === 'production'
       ? required('API_SIGNING_KEY')
       : optional('API_SIGNING_KEY', 'dev-only-insecure-key'),
+
+  // Verika integration (optional — only needed when AUTH_PROVIDER=verika)
+  verikaEndpoint: optional('VERIKA_ENDPOINT', ''),
+  verikaServiceId: optional('VERIKA_SERVICE_ID', ''),
+  verikaAudience: optional('VERIKA_AUDIENCE', ''),
 } as const;

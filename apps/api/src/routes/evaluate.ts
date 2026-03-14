@@ -10,6 +10,7 @@ import type { EvaluateRequest, BulkEvaluateRequest } from '../types/api';
 const router = Router();
 
 // All SDK evaluate routes require Bearer SDK key auth.
+// TODO(verika): sdkAuth will also accept Verika service tokens once api-key-auth.ts is updated.
 router.use(sdkAuth);
 
 // POST /sdk/evaluate — evaluate a single flag

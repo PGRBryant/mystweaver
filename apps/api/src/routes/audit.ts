@@ -5,27 +5,34 @@ import type { AuditAction } from '../types/audit';
 
 const router = Router();
 
-/** Escape a CSV field: wrap in quotes if it contains commas, quotes, or newlines. */
+/** Escape a CSV field: wrap in quotes if it contains commas, quotes, or newlines.
+ * Also neutralises formula injection: cells starting with =, +, -, @, tab are quoted
+ * and prefixed with a single-quote so spreadsheets don't execute them. */
 function csvEscape(field: string): string {
-  if (/[",\n\r]/.test(field) || field.startsWith('=') || field.startsWith('+') || field.startsWith('-') || field.startsWith('@')) {
-    return '"' + field.replace(/"/g, '""') + '"';
+  // Strip tabs to prevent tab-then-formula injection across cells.
+  const sanitised = field.replace(/\t/g, ' ');
+  const formulaChar = sanitised.startsWith('=') || sanitised.startsWith('+') ||
+    sanitised.startsWith('-') || sanitised.startsWith('@');
+  if (/[",\n\r]/.test(sanitised) || formulaChar) {
+    return '"' + (formulaChar ? "'" : '') + sanitised.replace(/"/g, '""') + '"';
   }
-  return field;
+  return sanitised;
 }
 
 // GET /api/audit — list audit records with optional filters
+// Pagination: pass `before=<ISO-timestamp>` to get the next page (cursor from last record's performedAt).
 router.get('/', async (req, res, next) => {
   try {
     const projectId = getProjectId(req);
-    const { flagKey, action, performedBy, limit, offset } = req.query;
+    const { flagKey, action, performedBy, limit, before } = req.query;
 
     const records = await listAuditRecords({
       projectId,
       flagKey: typeof flagKey === 'string' ? flagKey : undefined,
       action: typeof action === 'string' ? (action as AuditAction) : undefined,
       performedBy: typeof performedBy === 'string' ? performedBy : undefined,
-      limit: typeof limit === 'string' ? Number(limit) : undefined,
-      offset: typeof offset === 'string' ? Number(offset) : undefined,
+      limit: typeof limit === 'string' ? (parseInt(limit, 10) || undefined) : undefined,
+      before: typeof before === 'string' ? before : undefined,
     });
 
     res.json(records);

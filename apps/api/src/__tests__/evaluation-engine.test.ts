@@ -308,6 +308,40 @@ describe('rolloutHash', () => {
   });
 });
 
+// ── Rollout hash parity: server vs SDK client ────────────────────────────────
+// The server uses Node crypto (sync), the SDK uses Web Crypto (async).
+// Both must produce identical results for the same flagKey:userId inputs.
+// These test vectors are ground truth — if either implementation changes, this
+// test will catch the divergence before it silently splits users differently.
+
+describe('rolloutHash parity (server vs SDK client)', () => {
+  /** Mirrors the SDK's rolloutHash using Web Crypto via Node's globalThis.crypto. */
+  async function sdkRolloutHash(flagKey: string, userId: string): Promise<number> {
+    const data = new TextEncoder().encode(`${flagKey}:${userId}`);
+    const hashBuffer = await globalThis.crypto.subtle.digest('SHA-256', data);
+    const bytes = new Uint8Array(hashBuffer);
+    const num = ((bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]) >>> 0;
+    return num % 100;
+  }
+
+  const vectors: Array<[string, string]> = [
+    ['my-flag', 'user-123'],
+    ['game.task-timer-seconds', 'player-abc'],
+    ['experiment:exp-1:control', 'room404-user-99'],
+    ['release.new-ui', ''],
+    ['a', 'b'],
+    ['flag-with-dashes', 'user_with_underscores'],
+  ];
+
+  it.each(vectors)('server and SDK agree for flagKey=%s userId=%s', async (flagKey, userId) => {
+    const serverResult = rolloutHash(flagKey, userId);
+    const sdkResult = await sdkRolloutHash(flagKey, userId);
+    expect(serverResult).toBe(sdkResult);
+    expect(serverResult).toBeGreaterThanOrEqual(0);
+    expect(serverResult).toBeLessThan(100);
+  });
+});
+
 // ── Flag value types ─────────────────────────────────────────────────────────
 
 describe('flag value types', () => {

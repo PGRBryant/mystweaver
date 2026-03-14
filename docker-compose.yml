@@ -1,4 +1,5 @@
-# Local development environment: Firestore emulator + Redis + API server
+# Local development environment: Firestore emulator + API server
+# Cache is in-memory (LRU) — no Redis needed.
 # Usage:
 #   docker-compose up -d            # start background services only
 #   docker-compose --profile api up # also start the API in Docker
@@ -24,21 +25,6 @@ services:
       retries: 5
       start_period: 15s
 
-  # ── Redis ───────────────────────────────────────────────────────────────────
-  redis:
-    image: redis:7-alpine
-    container_name: mystweaver-redis
-    ports:
-      - '6379:6379'
-    command: redis-server --appendonly yes
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 5s
-      timeout: 3s
-      retries: 5
-    volumes:
-      - redis-data:/data
-
   # ── API server (optional; prefer running with `npm run dev` on the host) ───
   api:
     profiles: ['api']
@@ -53,12 +39,8 @@ services:
       PORT: '3000'
       FIRESTORE_EMULATOR_HOST: firestore:8080
       GOOGLE_CLOUD_PROJECT: mystweaver-local
-      REDIS_HOST: redis
-      REDIS_PORT: '6379'
     depends_on:
       firestore:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     healthcheck:
       test: ['CMD', 'wget', '-q', '-O', '/dev/null', 'http://localhost:3000/health']
@@ -66,9 +48,6 @@ services:
       timeout: 3s
       retries: 5
       start_period: 10s
-
-volumes:
-  redis-data:
 
 networks:
   default:

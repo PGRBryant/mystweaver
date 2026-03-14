@@ -1,10 +1,45 @@
+// ── Verika identity integration ───────────────────────────────────────────
+//
+// TODO(verika): Replace this stub interface with the real one from @internal/verika:
+//   import type { VerikaClient } from '@internal/verika';
+//
+// The stub is intentionally minimal — only getToken() is required for Phase 0.
+// When Verika is deployed, the real VerikaClient will be a superset of this.
+
+/** Minimal Verika client interface required by MystweaverClient (Phase 0 stub). */
+export interface VerikaClient {
+  /**
+   * Returns a short-lived bearer token for authenticating requests to Mystweaver.
+   * Called per-request; the implementation is responsible for caching/refreshing.
+   *
+   * TODO(verika): Will be implemented by @internal/verika once the service is live.
+   */
+  getToken(): Promise<string>;
+}
+
 // ── Configuration ────────────────────────────────────────────────────────
 
 export interface MystweaverConfig {
-  /** SDK API key (e.g. "mw_sdk_live_...") */
-  apiKey: string;
+  /**
+   * SDK API key (e.g. "mw_sdk_live_...").
+   * Required unless `identity` is provided — when both are present, `identity`
+   * takes precedence and `apiKey` is used as a fallback if getToken() fails.
+   */
+  apiKey?: string;
   /** Base URL of the Mystweaver API (e.g. "https://api.mystweaver.dev") */
   baseUrl: string;
+  /**
+   * Verika identity client for service-to-service authentication.
+   * When provided, the SDK obtains bearer tokens from Verika instead of using
+   * the raw `apiKey`. Falls back to `apiKey` if getToken() throws or returns empty.
+   *
+   * TODO(verika): Pass a real VerikaClient here once @internal/verika is published.
+   * Example:
+   *   import { createVerikaClient } from '@internal/verika';
+   *   const verika = createVerikaClient({ endpoint: process.env.VERIKA_ENDPOINT, serviceId: process.env.VERIKA_SERVICE_ID });
+   *   const client = new MystweaverClient({ baseUrl, identity: verika });
+   */
+  identity?: VerikaClient;
   /** Fallback values returned when the API is unreachable */
   defaults?: Record<string, unknown>;
   /** Enable Server-Sent Events for real-time flag updates (default: false) */

@@ -32,6 +32,9 @@
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist"
   },
+  "optionalDependencies": {
+    "@internal/verika": "*"
+  },
   "devDependencies": {
     "@vitest/coverage-v8": "^1.0.4",
     "jsdom": "^23.2.0",

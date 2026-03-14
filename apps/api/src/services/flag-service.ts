@@ -130,10 +130,15 @@ export async function updateFlag(
   if (data.enabled === true && !existingData.enabled) action = 'flag.enabled';
   if (data.enabled === false && existingData.enabled) action = 'flag.disabled';
 
-  await docRef.update({
-    ...data,
-    updatedAt: FieldValue.serverTimestamp(),
-  });
+  // Explicitly whitelist updatable fields to prevent mass-assignment.
+  const patch: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() };
+  if (data.name !== undefined) patch.name = data.name;
+  if (data.description !== undefined) patch.description = data.description;
+  if (data.defaultValue !== undefined) patch.defaultValue = data.defaultValue;
+  if (data.enabled !== undefined) patch.enabled = data.enabled;
+  if (data.rules !== undefined) patch.rules = data.rules;
+  if (data.tags !== undefined) patch.tags = data.tags;
+  await docRef.update(patch);
 
   await invalidateFlag(projectId, key);
   await publishFlagChange(key, 'update');

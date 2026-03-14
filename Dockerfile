@@ -4,7 +4,7 @@
 ###############################################
 # Stage 1: deps — install all workspace deps  #
 ###############################################
-FROM node:20-alpine AS deps
+FROM node:20.18-alpine3.21 AS deps
 WORKDIR /app
 
 # Copy root manifests first for better layer caching
@@ -21,7 +21,7 @@ RUN npm ci --include=dev
 ###############################################
 # Stage 2: build — compile TypeScript         #
 ###############################################
-FROM node:20-alpine AS build
+FROM node:20.18-alpine3.21 AS build
 WORKDIR /app
 
 # Reuse installed modules from deps stage
@@ -43,7 +43,7 @@ RUN npm run build --workspace=@mystweaver/api
 ###############################################
 # Stage 3: runner — lean production image     #
 ###############################################
-FROM node:20-alpine AS runner
+FROM node:20.18-alpine3.21 AS runner
 ENV NODE_ENV=production
 WORKDIR /app
 
@@ -70,7 +70,7 @@ USER mystweaver
 EXPOSE 3000
 
 HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget -q -O /dev/null http://localhost:3000/health || exit 1
+  CMD wget -q -O /dev/null http://localhost:3000/health/live || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "apps/api/dist/index.js"]

@@ -4,6 +4,7 @@ import { getFlagConfig } from '../services/flag-service';
 
 const router = Router();
 
+// TODO(verika): sdkAuth will also accept Verika service tokens once api-key-auth.ts is updated.
 router.use(sdkAuth);
 
 // GET /sdk/flags — full flag config in a single read (for local evaluation)

@@ -1,0 +1,13 @@
+rules_version = '2';
+
+// Mystweaver uses server-side access only (Cloud Run service account via Admin SDK).
+// The Admin SDK bypasses these rules entirely, so all reads/writes from the API
+// are unrestricted. These rules deny ALL direct client access as a defense-in-depth
+// measure — no browser or mobile client should ever talk to Firestore directly.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

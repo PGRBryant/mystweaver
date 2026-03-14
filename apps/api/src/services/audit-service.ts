@@ -1,4 +1,4 @@
-import { FieldValue, Query } from '@google-cloud/firestore';
+import { FieldValue, Query, Timestamp } from '@google-cloud/firestore';
 import { auditCollection } from '../db/firestore';
 import { logger } from '../logger';
 import type { AuditAction, AuditRecord } from '../types/audit';
@@ -42,11 +42,13 @@ export interface ListAuditParams {
   action?: AuditAction;
   performedBy?: string;
   limit?: number;
-  offset?: number;
+  /** ISO-8601 timestamp of the last record on the previous page (cursor-based pagination). */
+  before?: string;
 }
 
 /**
  * List audit records with optional filters. Returns newest first.
+ * Uses cursor-based pagination via `before` (ISO timestamp of last seen record).
  */
 export async function listAuditRecords(params: ListAuditParams): Promise<AuditRecord[]> {
   let query = auditCollection(params.projectId).orderBy('performedAt', 'desc') as Query;
@@ -61,16 +63,14 @@ export async function listAuditRecords(params: ListAuditParams): Promise<AuditRe
     query = query.where('performedBy', '==', params.performedBy);
   }
 
-  const limit = Math.min(params.limit ?? 50, 200);
-  if (params.offset) {
-    // Firestore doesn't have native offset — use limit+startAfter in future.
-    // For now, fetch extra and slice.
-    const snapshot = await query.limit(limit + (params.offset ?? 0)).get();
-    return snapshot.docs
-      .slice(params.offset)
-      .map((doc) => ({ id: doc.id, ...doc.data() }) as AuditRecord);
+  if (params.before) {
+    const cursorDate = new Date(params.before);
+    if (!isNaN(cursorDate.getTime())) {
+      query = query.startAfter(Timestamp.fromDate(cursorDate));
+    }
   }
 
+  const limit = Math.min(params.limit ?? 50, 200);
   const snapshot = await query.limit(limit).get();
   return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as AuditRecord);
 }

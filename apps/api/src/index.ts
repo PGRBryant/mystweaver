@@ -78,8 +78,25 @@ const sdkRateLimit = rateLimit({
   message: { error: 'Rate limit exceeded. Max 100 requests per minute per SDK key.' },
 });
 
+// Basic liveness — always 200 if the process is alive.
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.get('/health/live', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Readiness — checks that Firestore is reachable before accepting traffic.
+app.get('/health/ready', async (_req, res) => {
+  try {
+    const { db } = await import('./db/firestore');
+    await db.listCollections();
+    res.json({ status: 'ready', timestamp: new Date().toISOString() });
+  } catch (err) {
+    logger.warn({ err }, 'Readiness check failed');
+    res.status(503).json({ status: 'not ready', timestamp: new Date().toISOString() });
+  }
 });
 
 // ── Admin API routes (authenticated) ────────────────────────────────────
@@ -90,6 +107,19 @@ app.use('/api/experiments', adminAuth, experimentsRouter);
 
 app.get('/api/auth/me', adminAuth, (req, res) => {
   res.json({ email: req.user?.email ?? null });
+});
+
+/**
+ * POST /api/auth/verify — verify a caller's identity and return resolved claims.
+ * Used by Verika (and other services) to validate that a token is accepted by
+ * Mystweaver's configured auth provider, without needing to duplicate provider logic.
+ * Returns 200 + { email, serviceAccount? } on success, 401 on failure.
+ */
+app.post('/api/auth/verify', adminAuth, (req, res) => {
+  res.json({
+    email: req.user?.email ?? null,
+    serviceAccount: req.user?.serviceAccount ?? null,
+  });
 });
 
 // ── Session lifecycle ─────────────────────────────────────────────────

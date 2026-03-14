@@ -4,7 +4,7 @@
 #   /api/*    → mystweaver-api  (IAP ON  — admin endpoints)
 #   /sdk/*    → mystweaver-api  (IAP OFF — SDK endpoints, Bearer auth)
 #   /health   → mystweaver-api  (IAP OFF)
-#   /metrics  → mystweaver-api  (IAP OFF)
+#   /metrics  → mystweaver-api  (IAP ON  — app also enforces adminAuth)
 
 # ── Static IP ─────────────────────────────────────────────────────────────
 
@@ -102,16 +102,28 @@ resource "google_compute_url_map" "default" {
       service = google_compute_backend_service.api_admin.id
     }
 
+    # Auth/identity endpoints — IAP protected (Verika and service-to-service auth)
+    path_rule {
+      paths   = ["/auth/*"]
+      service = google_compute_backend_service.api_admin.id
+    }
+
     # SDK endpoints — public
     path_rule {
       paths   = ["/sdk/*"]
       service = google_compute_backend_service.api_public.id
     }
 
-    # Health + metrics — public
+    # Health check — public (required by Cloud Run and load balancer probes)
     path_rule {
-      paths   = ["/health", "/metrics"]
+      paths   = ["/health"]
       service = google_compute_backend_service.api_public.id
+    }
+
+    # Metrics — IAP protected (app also enforces adminAuth as defense in depth)
+    path_rule {
+      paths   = ["/metrics"]
+      service = google_compute_backend_service.api_admin.id
     }
   }
 }

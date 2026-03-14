@@ -4,7 +4,10 @@ import type { TrackEvent } from './types';
 /**
  * Buffers SDK events and flushes them in batches to the API.
  * Flushes when either the size threshold or the time interval is reached.
+ * Drops oldest events when the queue exceeds MAX_QUEUE_SIZE to bound memory usage.
  */
+const MAX_QUEUE_SIZE = 1_000;
+
 export class EventQueue {
   private queue: TrackEvent[] = [];
   private timer: ReturnType<typeof setInterval> | null = null;
@@ -32,8 +35,12 @@ export class EventQueue {
     }
   }
 
-  /** Enqueue an event. Triggers an immediate flush if the batch is full. */
+  /** Enqueue an event. Triggers an immediate flush if the batch is full.
+   * Drops the oldest event if the queue is at capacity. */
   push(event: TrackEvent): void {
+    if (this.queue.length >= MAX_QUEUE_SIZE) {
+      this.queue.shift(); // drop oldest to bound memory
+    }
     this.queue.push(event);
     if (this.queue.length >= this.flushSize) {
       void this.flush();
@@ -51,9 +58,11 @@ export class EventQueue {
     try {
       await this.http.post('/sdk/events', { events: batch });
     } catch {
-      // Fire-and-forget — events are best-effort.
-      // Re-enqueue on failure so they can be retried on next flush.
-      this.queue.unshift(...batch);
+      // Events are best-effort. Re-enqueue for retry but respect the cap.
+      const available = MAX_QUEUE_SIZE - this.queue.length;
+      if (available > 0) {
+        this.queue.unshift(...batch.slice(0, available));
+      }
     } finally {
       this.flushing = false;
     }
