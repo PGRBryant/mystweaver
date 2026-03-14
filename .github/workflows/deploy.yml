@@ -140,6 +140,7 @@ jobs:
           service: mystweaver-web
           region: ${{ secrets.GCP_REGION }}
           image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/mystweaver/web:${{ github.sha }}
+          env_vars_update_strategy: merge
 
   # ── Smoke Tests (post-deploy) ──────────────────────────────────────────────
   smoke-test:
