@@ -19,7 +19,7 @@ let _verika: { validateServiceToken(t: string): Promise<VerikaIdentity> } | null
  * Initialise the Verika client. Call once at startup.
  * Fails gracefully if @internal/verika is not installed or misconfigured.
  */
-export async function initVerikaObserver(endpoint: string, serviceId: string): Promise<void> {
+export async function initVerika(endpoint: string, serviceId: string): Promise<void> {
   if (!endpoint || !serviceId) return;
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -81,6 +81,7 @@ export async function sdkAuth(req: Request, res: Response, next: NextFunction): 
   if (rawToken.startsWith('eyJ') && _verika !== null) {
     try {
       const identity = await _verika.validateServiceToken(rawToken);
+      req.sdkProjectId = identity.project;
       req.verikaCallerService = identity.serviceId;
       req.verikaTokenId = identity.tokenId;
       req.verikaCapabilities = identity.capabilities;
@@ -88,6 +89,7 @@ export async function sdkAuth(req: Request, res: Response, next: NextFunction): 
         {
           serviceId: identity.serviceId,
           tokenId: identity.tokenId,
+          project: identity.project,
           capabilities: identity.capabilities,
         },
         'verika:auth-allowed',

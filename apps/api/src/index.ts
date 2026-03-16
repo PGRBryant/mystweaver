@@ -15,7 +15,7 @@ import eventsRouter from './routes/events';
 import sdkFlagsRouter from './routes/sdk-flags';
 import { errorHandler } from './middleware/error-handler';
 import { adminAuth } from './middleware/admin-auth';
-import { initVerikaObserver, verikaServiceAuth } from './middleware/api-key-auth';
+import { initVerika, verikaServiceAuth } from './middleware/api-key-auth';
 import { startSubscription, stopSubscription } from './services/pubsub-service';
 
 const app = express();
@@ -181,7 +181,7 @@ const server = app.listen(config.port, () => {
   startSubscription().catch((err) => {
     logger.warn({ err }, 'Failed to start Pub/Sub subscription');
   });
-  initVerikaObserver(config.verikaEndpoint, config.verikaServiceId).catch(() => {});
+  initVerika(config.verikaEndpoint, config.verikaServiceId).catch(() => {});
 });
 
 process.on('SIGTERM', () => {
