@@ -2,16 +2,21 @@ import type { Request, Response, NextFunction } from 'express';
 import { validateSDKKey } from '../services/sdk-key-service';
 import { logger } from '../logger';
 
-// ── Verika observation mode ───────────────────────────────────────────────────
-// Shadow-validates incoming tokens so we can observe what Verika would decide
-// before enforcement is turned on. Never changes actual auth outcome.
+// ── Verika client (singleton, initialised once at startup) ────────────────────
+
+type VerikaIdentity = {
+  serviceId: string;
+  tokenId: string;
+  capabilities: string[];
+  version: number;
+  project: string;
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _verikaObserver: { validateServiceToken(t: string): Promise<{ serviceId: string }> } | null =
-  null;
+let _verika: { validateServiceToken(t: string): Promise<VerikaIdentity> } | null = null;
 
 /**
- * Initialize the Verika observer. Call once at startup.
+ * Initialise the Verika client. Call once at startup.
  * Fails gracefully if @internal/verika is not installed or misconfigured.
  */
 export async function initVerikaObserver(endpoint: string, serviceId: string): Promise<void> {
@@ -25,64 +30,80 @@ export async function initVerikaObserver(endpoint: string, serviceId: string): P
       verikaEndpoint: endpoint,
     });
     await client.ready();
-    _verikaObserver = client;
-    logger.info({ serviceId }, 'verika:observer-ready');
+    _verika = client;
+    logger.info({ serviceId }, 'verika:client-ready');
   } catch (err) {
-    logger.warn({ err }, 'verika:observer-unavailable');
+    logger.warn({ err }, 'verika:client-unavailable');
   }
 }
 
-// Extend Express Request to carry SDK context.
+// Extend Express Request to carry both SDK and Verika context.
 declare global {
   namespace Express {
     interface Request {
       sdkProjectId?: string;
+      verikaTokenId?: string;
+      verikaCallerService?: string;
+      verikaCapabilities?: string[];
     }
   }
 }
 
 /**
- * Validates an SDK key from either:
- *   1. Authorization: Bearer <sdk-key> header (preferred)
- *   2. ?apiKey=<sdk-key> query parameter (for EventSource/SSE which can't set headers)
+ * Validates an SDK key OR a Verika-issued service token from either:
+ *   1. Authorization: Bearer <token> header (preferred)
+ *   2. ?apiKey=<token> query parameter (for EventSource/SSE which can't set headers)
  *
- * On success, sets req.sdkProjectId to the key's projectId.
+ * Auth path selection:
+ *   - If the bearer value looks like a JWT (starts with "eyJ") AND Verika is
+ *     available, enforce it as a Verika service token.
+ *   - Otherwise fall through to SDK key validation (backwards compatible).
  *
- * TODO(verika): Phase 1 — also accept a Verika-issued service token here.
- * When a consuming service (e.g. Room 404) presents a Verika identity token
- * instead of a raw SDK key, validate it via @internal/verika and derive the
- * projectId from the token's service claims rather than the sdk-keys collection.
- * The fallback (SDK key path) remains unchanged for backwards compatibility.
+ * On success, populates req.sdkProjectId (SDK path) or req.verikaCallerService +
+ * req.verikaTokenId + req.verikaCapabilities (Verika path).
  */
 export async function sdkAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
   const header = req.headers.authorization;
-  let rawKey: string | undefined;
+  let rawToken: string | undefined;
 
   if (header?.startsWith('Bearer ')) {
-    rawKey = header.slice(7);
+    rawToken = header.slice(7);
   } else if (typeof req.query.apiKey === 'string' && req.query.apiKey) {
-    rawKey = req.query.apiKey;
+    rawToken = req.query.apiKey;
   }
 
-  if (!rawKey) {
+  if (!rawToken) {
     res.status(401).json({ error: 'Missing or invalid Authorization header' });
     return;
   }
 
-  // Observation mode: shadow-validate Verika JWTs without changing auth behavior.
-  if (rawKey.startsWith('eyJ') && _verikaObserver !== null) {
-    _verikaObserver
-      .validateServiceToken(rawKey)
-      .then((identity) =>
-        logger.info({ serviceId: identity.serviceId, mode: 'observation' }, 'verika:shadow-allow'),
-      )
-      .catch((err: Error) =>
-        logger.info({ code: err.message, mode: 'observation' }, 'verika:shadow-deny'),
+  // ── Verika path ───────────────────────────────────────────────────────────
+  if (rawToken.startsWith('eyJ') && _verika !== null) {
+    try {
+      const identity = await _verika.validateServiceToken(rawToken);
+      req.verikaCallerService = identity.serviceId;
+      req.verikaTokenId = identity.tokenId;
+      req.verikaCapabilities = identity.capabilities;
+      logger.info(
+        {
+          serviceId: identity.serviceId,
+          tokenId: identity.tokenId,
+          capabilities: identity.capabilities,
+        },
+        'verika:auth-allowed',
       );
+      next();
+      return;
+    } catch (err: unknown) {
+      const code = err instanceof Error ? err.message : String(err);
+      logger.warn({ code }, 'verika:auth-denied');
+      res.status(401).json({ error: 'Invalid or revoked Verika token' });
+      return;
+    }
   }
 
-  const projectId = await validateSDKKey(rawKey);
-
+  // ── SDK key path (backwards compatible) ──────────────────────────────────
+  const projectId = await validateSDKKey(rawToken);
   if (!projectId) {
     res.status(401).json({ error: 'Invalid or revoked SDK key' });
     return;
@@ -90,4 +111,60 @@ export async function sdkAuth(req: Request, res: Response, next: NextFunction): 
 
   req.sdkProjectId = projectId;
   next();
+}
+
+/**
+ * Returns an Express middleware that requires a valid Verika service token
+ * bearing the specified capability. SDK keys are NOT accepted on these routes.
+ *
+ * Usage:
+ *   app.get('/metrics', verikaServiceAuth('metrics.read'), handler)
+ *   // or combine with a fallback:
+ *   app.get('/metrics', (req, res, next) =>
+ *     req.headers.authorization?.startsWith('eyJ') ? verikaServiceAuth('metrics.read')(req, res, next) : adminAuth(req, res, next)
+ *   )
+ */
+export function verikaServiceAuth(
+  capability: string,
+): (req: Request, res: Response, next: NextFunction) => Promise<void> {
+  return async (req, res, next) => {
+    if (_verika === null) {
+      res.status(503).json({ error: 'Verika client not initialised' });
+      return;
+    }
+
+    const header = req.headers.authorization;
+    const rawToken = header?.startsWith('Bearer ') ? header.slice(7) : undefined;
+
+    if (!rawToken) {
+      res.status(401).json({ error: 'Missing Authorization header' });
+      return;
+    }
+
+    try {
+      const identity = await _verika.validateServiceToken(rawToken);
+
+      if (!identity.capabilities.includes(capability)) {
+        logger.warn(
+          { serviceId: identity.serviceId, required: capability, has: identity.capabilities },
+          'verika:capability-denied',
+        );
+        res.status(403).json({ error: `Missing required capability: ${capability}` });
+        return;
+      }
+
+      req.verikaCallerService = identity.serviceId;
+      req.verikaTokenId = identity.tokenId;
+      req.verikaCapabilities = identity.capabilities;
+      logger.info(
+        { serviceId: identity.serviceId, tokenId: identity.tokenId, capability },
+        'verika:capability-allowed',
+      );
+      next();
+    } catch (err: unknown) {
+      const code = err instanceof Error ? err.message : String(err);
+      logger.warn({ code, capability }, 'verika:auth-denied');
+      res.status(401).json({ error: 'Invalid or revoked Verika token' });
+    }
+  };
 }
