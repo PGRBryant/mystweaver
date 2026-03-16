@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { type Request, type Response, type NextFunction } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
@@ -15,7 +15,7 @@ import eventsRouter from './routes/events';
 import sdkFlagsRouter from './routes/sdk-flags';
 import { errorHandler } from './middleware/error-handler';
 import { adminAuth } from './middleware/admin-auth';
-import { initVerikaObserver } from './middleware/api-key-auth';
+import { initVerika, verikaServiceAuth } from './middleware/api-key-auth';
 import { startSubscription, stopSubscription } from './services/pubsub-service';
 
 const app = express();
@@ -162,7 +162,14 @@ app.use('/sdk/events', sdkRateLimit, eventsRouter);
 // ── Monitoring ──────────────────────────────────────────────────────────
 app.use('/api/stream', streamRouter);
 
-app.get('/metrics', adminAuth, (_req, res) => {
+// /metrics accepts either a Verika service token (metrics.read capability) or
+// the existing admin auth provider — whichever the caller presents.
+const metricsAuth = (req: Request, res: Response, next: NextFunction) =>
+  req.headers.authorization?.startsWith('eyJ')
+    ? verikaServiceAuth('metrics.read')(req, res, next)
+    : adminAuth(req, res, next);
+
+app.get('/metrics', metricsAuth, (_req, res) => {
   res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
   res.send(collectMetrics());
 });
@@ -174,7 +181,7 @@ const server = app.listen(config.port, () => {
   startSubscription().catch((err) => {
     logger.warn({ err }, 'Failed to start Pub/Sub subscription');
   });
-  initVerikaObserver(config.verikaEndpoint, config.verikaServiceId).catch(() => {});
+  initVerika(config.verikaEndpoint, config.verikaServiceId).catch(() => {});
 });
 
 process.on('SIGTERM', () => {
