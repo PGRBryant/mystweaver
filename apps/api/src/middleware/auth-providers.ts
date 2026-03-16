@@ -49,24 +49,27 @@ export const devProvider: AuthProvider = {
   },
 };
 
-// ── Verika provider stub ──────────────────────────────────────────────────────
+// ── Verika provider ───────────────────────────────────────────────────────────
 // Activate by setting AUTH_PROVIDER=verika.
-// Replace the stub body with real JWT verification once Verika is deployed.
+// Validates Verika-issued human JWTs sent as `Authorization: Bearer <token>`.
+
+import { getVerikaClient } from './api-key-auth';
 
 export const verikaProvider: AuthProvider = {
-  // TODO(verika): Auth decision point. Replace this stub with real JWT verification:
-  //   import { createVerikaVerifier } from '@internal/verika';
-  //   const verifier = createVerikaVerifier({
-  //     endpoint: config.verikaEndpoint,
-  //     serviceId: config.verikaServiceId,
-  //     audience: config.verikaAudience,
-  //   });
-  //   const token = req.headers.authorization?.replace(/^Bearer /, '');
-  //   const claims = await verifier.verify(token);
-  //   return claims ? { email: claims.sub, serviceAccount: claims.service_account } : null;
-  resolve(_req) {
-    // TODO(verika): Stub — always returns null until @internal/verika is wired in.
-    return null;
+  async resolve(req) {
+    const header = req.headers.authorization;
+    const token = header?.startsWith('Bearer ') ? header.slice(7) : undefined;
+    if (!token) return null;
+
+    const verika = getVerikaClient();
+    if (!verika) return null;
+
+    try {
+      const identity = await verika.validateHumanToken(token);
+      return { email: identity.email };
+    } catch {
+      return null;
+    }
   },
 };
 

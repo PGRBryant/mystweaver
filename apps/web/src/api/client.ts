@@ -1,6 +1,7 @@
 import type { Flag, CreateFlagData, UpdateFlagData, EvaluateResult } from '@/types/flag';
 import type { AuditRecord } from '@/types/audit';
 import type { Experiment, ExperimentResults, ExperimentVariant } from '@/types/experiment';
+import { getStoredToken } from '@/components/AuthGuard';
 
 const BASE = '/api';
 
@@ -18,9 +19,12 @@ class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = getStoredToken();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${BASE}${path}`, {
     ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
+    headers: { ...headers, ...(init?.headers as Record<string, string> | undefined) },
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: res.statusText }));

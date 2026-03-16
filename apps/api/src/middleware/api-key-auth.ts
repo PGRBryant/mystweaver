@@ -12,8 +12,18 @@ type VerikaIdentity = {
   project: string;
 };
 
+type VerikaClientInstance = {
+  validateServiceToken(t: string): Promise<VerikaIdentity>;
+  validateHumanToken(t: string): Promise<{ userId: string; email: string; roles: string[]; tokenId: string }>;
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _verika: { validateServiceToken(t: string): Promise<VerikaIdentity> } | null = null;
+let _verika: VerikaClientInstance | null = null;
+
+/** Returns the Verika client singleton, or null if not yet initialised. */
+export function getVerikaClient(): VerikaClientInstance | null {
+  return _verika;
+}
 
 /**
  * Initialise the Verika client. Call once at startup.
